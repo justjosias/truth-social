@@ -1,0 +1,45 @@
+- i ||= 0
+- highlighted ||= false
+
+%table.email-table{ cellspacing: 0, cellpadding: 0, dir: 'ltr' }
+  %tbody
+    %tr
+      %td.email-body
+        .email-container
+          %table.content-section{ cellspacing: 0, cellpadding: 0 }
+            %tbody
+              %tr
+                %td.content-cell.content-around
+                  .email-row
+                    .col-6
+                      %table.column{ cellspacing: 0, cellpadding: 0 }
+                        %tbody
+                          %tr
+                            %td.column-cell.padded.status{ class: highlighted ? 'status--highlighted' : '' }
+                              %table.status-header{ cellspacing: 0, cellpadding: 0 }
+                                %tbody
+                                  %tr
+                                    %td{ align: 'left', width: 48 }
+                                      = image_tag full_asset_url(status.account.avatar.url), alt:''
+                                    %td{ align: 'left' }
+                                      %bdi= display_name(status.account)
+                                      = "@#{status.account.acct}"
+
+                              - if status.spoiler_text?
+                                %div.auto-dir
+                                  %p
+                                    = Formatter.instance.format_spoiler(status)
+
+                              %div.auto-dir
+                                = Formatter.instance.format(status)
+
+                                - if status.media_attachments.size > 0
+                                  %p
+                                    - status.media_attachments.each do |a|
+                                      - if status.local?
+                                        = link_to medium_url(a), medium_url(a)
+                                      - else
+                                        = link_to a.remote_url, a.remote_url
+
+                              %p.status-footer
+                                = link_to l(status.created_at), web_url("statuses/#{status.id}")

@@ -1,0 +1,35 @@
+%table.email-table{ cellspacing: 0, cellpadding: 0 }
+  %tbody
+    %tr
+      %td.email-body
+        .email-container
+          %table.content-section{ cellspacing: 0, cellpadding: 0 }
+            %tbody
+              %tr
+                %td.content-cell.hero
+                  .email-row
+                    .col-6
+                      %table.column{ cellspacing: 0, cellpadding: 0 }
+                        %tbody
+                          %tr
+                            %td.column-cell.padded
+                              %table.hero-icon{ align: 'center', cellspacing: 0, cellpadding: 0 }
+                                %tbody
+                                  %tr
+                                    %td
+                                      = image_tag full_pack_url('media/images/mailer/waving_hand.png'), alt: ''
+                              %p= t 'admin_mailer.account_invitation.salutation'
+                              %p
+                                Someone you know invited you to join the ALPHA version of TRUTH Social. TRUTH Social is America’s “Big-Tent” social media platform that encourages an open, free, and honest global conversation without discriminating against political ideology.
+                              %p.text-center
+                                %br
+                                =link_to "Create your Account", @url, class: "big-button"
+                                %br
+                                %br
+                              %p 
+                                In order to fine-tune the platform we're asking you to create an account, set up a profile, and start interacting with others on TRUTH Social. We want you to help us find bugs, hear what you like and don’t like and what improvements you would like to see, in order to make it a great user experience prior to releasing it to the masses.
+                              %p
+                                Your help would be greatly appreciated as we continue to create a social media platform that welcomes everyone!
+                              %p
+                                Thanks again!
+                                — The TRUTH Social Team
