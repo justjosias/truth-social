@@ -89,6 +89,15 @@ RSpec.describe User, type: :model do
         expect(User.matches_email('specified')).to match_array([specified])
       end
     end
+
+    describe 'matches_sms' do
+      it 'returns a relation of users whose sms starts with the given string' do
+        specified = Fabricate(:user, sms: '234-555-2344')
+        Fabricate(:user, sms: '205-555-2344')
+
+        expect(User.matches_sms('234-555-2344')).to match_array([specified])
+      end
+    end
   end
 
   let(:account) { Fabricate(:account, username: 'alice') }
@@ -121,6 +130,67 @@ RSpec.describe User, type: :model do
       user = User.new(email: 'foo@mvrht.com.topdomain.tld', account: account, password: password, agreement: true)
 
       expect(user.valid?).to be_falsey
+    end
+  end
+
+  describe '#set_waitlist_position' do
+    let(:user_1) { Fabricate(:user, approved: false, waitlist_position: 1) }
+    let(:user_2) { Fabricate(:user, approved: false, waitlist_position: 2) }
+    let(:user_3) { Fabricate(:user, approved: false, waitlist_position: 3) }
+    let(:user_4) { Fabricate(:user, approved: false, waitlist_position: 4) }
+    let(:user_5) { Fabricate(:user, approved: false) }
+
+    before do
+      user_1
+      user_2
+      user_3
+      user_4
+      user_5
+    end
+
+    it 'increments the position of the last pending user' do
+      expect(user_5.set_waitlist_position).to be 5
+    end
+  end
+
+  describe '#get_position_in_waitlist_queue' do
+    context 'with users in the waitlist' do
+      let(:user_1) { Fabricate(:user, approved: true, waitlist_position: 1) }
+      let(:user_2) { Fabricate(:user, approved: true, waitlist_position: 2) }
+      let(:user_3) { Fabricate(:user, approved: true, waitlist_position: 3) }
+      let(:user_4) { Fabricate(:user, approved: false, waitlist_position: 4) }
+      let(:user_5) { Fabricate(:user, approved: false, waitlist_position: 5) }
+      let(:user_6) { Fabricate(:user, approved: false, waitlist_position: 6) }
+      let(:user_7) { Fabricate(:user, approved: false, waitlist_position: 7) }
+
+      before do
+        user_1
+        user_2
+        user_3
+        user_4
+        user_5
+        user_6
+      end
+
+      it 'increments the position of the last pending user' do
+        expect(user_7.get_position_in_waitlist_queue).to be 4
+      end
+    end
+
+    context 'when the waitlist is empty' do
+      let(:user_1) { Fabricate(:user, approved: false, waitlist_position: 1) }
+
+      it 'returns correct waitlist number' do
+        expect(user_1.get_position_in_waitlist_queue).to be 1
+      end
+    end
+
+    context 'when the user is already approved' do
+      let(:user_1) { Fabricate(:user, approved: true, waitlist_position: 1) }
+
+      it 'returns 0' do
+        expect(user_1.get_position_in_waitlist_queue).to be 0
+      end
     end
   end
 
@@ -176,6 +246,47 @@ RSpec.describe User, type: :model do
       ActiveJob::Base.queue_adapter = :test
 
       expect { user.send_confirmation_instructions }.to have_enqueued_job(ActionMailer::MailDeliveryJob)
+    end
+  end
+
+  describe 'user_token' do
+    it 'is a users id and updated_at.to_s combined with an = sign' do
+      user = Fabricate(:user)
+
+      expect(user.validate_user_token(user.user_token)).to eq(true)
+    end
+  end
+
+  describe 'self.get_user_from_token' do
+    let(:user) { Fabricate(:user, created_at: Time.now - 10000, updated_at: Time.now) }
+    let(:token) { user.user_token }
+
+    it 'finds a user based on the token passed in' do
+      found_user = User.get_user_from_token(token)
+
+      expect(user.id).to eq(found_user.id)
+    end
+
+    it 'returns nil if it finds no user' do
+      bad_token  = EncryptAttrService.encrypt("1234n+=#{user.created_at.to_s}")
+      found_user = User.get_user_from_token(bad_token)
+
+      expect(found_user).to be_nil
+    end
+  end
+
+  describe 'validate_user_token' do
+    let(:user) { Fabricate(:user, created_at: Time.now - 10000, updated_at: Time.now) }
+    let(:token) { user.user_token }
+
+    it 'returns true if the token does match' do
+      found_user = User.get_user_from_token(token)
+      expect(found_user.validate_user_token(token)).to be(true)
+    end
+
+    it 'returns false if the token does not match' do
+      bad_token  = EncryptAttrService.encrypt("#{user.id}+=#{user.created_at.to_s}")
+      expect(user.validate_user_token(bad_token)).to be(false)
     end
   end
 
@@ -361,8 +472,8 @@ RSpec.describe User, type: :model do
         expect(user.confirmed_at).to be_present
       end
 
-      it 'delivers mails' do
-        expect(ActionMailer::Base.deliveries.count).to eq 2
+      it 'does not deliver mails' do
+        expect(ActionMailer::Base.deliveries.count).to eq 1
       end
     end
 
@@ -516,6 +627,33 @@ RSpec.describe User, type: :model do
         let(:confirmed_at) { nil }
 
         it { is_expected.to be true }
+      end
+    end
+  end
+
+  describe "#send_approved_notification" do
+    subject(:user) { Fabricate(:user, approved: false) }
+
+    class DummyNotifyService
+      def call(account, type, activity); end
+    end
+
+    context 'when the user is not approved' do
+      it 'calls on the notify service' do
+        expect(NotifyService).to receive(:new).and_return(DummyNotifyService.new).once
+
+        user.update(approved: true)
+      end
+    end
+
+    context 'when the user is already approved' do
+      before(:each) { user.update(approved: true) }
+
+      it 'does not call on the notify service' do
+        expect(NotifyService).not_to receive(:new)
+
+        user.update(approved: true)
+        user.update(approved: false)
       end
     end
   end

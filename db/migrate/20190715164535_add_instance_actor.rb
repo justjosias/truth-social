@@ -1,6 +1,7 @@
 class AddInstanceActor < ActiveRecord::Migration[5.2]
   def up
-    Account.create!(id: -99, actor_type: 'Application', locked: true, username: Rails.configuration.x.local_domain)
+    account = Account.new(id: -99, actor_type: 'Application', locked: true, username: Rails.configuration.x.local_domain)
+    account.save!(validate: false)
   end
 
   def down

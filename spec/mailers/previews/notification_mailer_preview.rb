@@ -33,6 +33,11 @@ class NotificationMailerPreview < ActionMailer::Preview
 
   # Preview this email at http://localhost:3000/rails/mailers/notification_mailer/digest
   def digest
-    NotificationMailer.digest(Account.first, since: 90.days.ago)
+    NotificationMailer.digest(Account.joins(:user).first, since: 90.days.ago)
+  end
+
+  # Preview this email at http://localhost:3000/rails/mailers/notification_mailer/user_approved
+  def user_approved
+    NotificationMailer.user_approved(Account.joins(:user).first)
   end
 end

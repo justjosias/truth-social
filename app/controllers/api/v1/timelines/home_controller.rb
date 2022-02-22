@@ -6,6 +6,7 @@ class Api::V1::Timelines::HomeController < Api::BaseController
   after_action :insert_pagination_headers, unless: -> { @statuses.empty? }
 
   def show
+    Rails.logger.debug "X-Forwarded-For: #{request.headers["X-Forwarded-For"]} Detected ip: #{request.remote_ip}"
     @statuses = load_statuses
 
     render json: @statuses,

@@ -3,46 +3,25 @@
 class ProcessMentionsService < BaseService
   include Payloadable
 
+  MAX_MENTIONS = ENV.fetch('MAX_MENTIONS', 15).to_i
+
   # Scan status for mentions and fetch remote mentioned users, create
   # local mention pointers, send Salmon notifications to mentioned
   # remote users
   # @param [Status] status
-  def call(status)
-    return unless status.local?
+  # @param [Enumerable] mentions an array of usernames
+  def call(status, mentions)
+    @status = status
 
-    @status  = status
-    mentions = []
+    mentions = mentions.first(MAX_MENTIONS) if mentions.length > MAX_MENTIONS
 
-    status.text = status.text.gsub(Account::MENTION_RE) do |match|
-      username, domain = Regexp.last_match(1).split('@')
+    mentioned_accounts = Account.ci_find_by_usernames(mentions)
+    mentioned_accounts.each do |acc|
+      next acc if mention_undeliverable?(acc) || acc.suspended?
 
-      domain = if TagManager.instance.local_domain?(domain)
-                 nil
-               else
-                 TagManager.instance.normalize_domain(domain)
-               end
-
-      mentioned_account = Account.find_remote(username, domain)
-
-      if mention_undeliverable?(mentioned_account)
-        begin
-          mentioned_account = resolve_account_service.call(Regexp.last_match(1))
-        rescue Webfinger::Error, HTTP::Error, OpenSSL::SSL::SSLError, Mastodon::UnexpectedResponseError
-          mentioned_account = nil
-        end
-      end
-
-      next match if mention_undeliverable?(mentioned_account) || mentioned_account&.suspended?
-
-      mention = mentioned_account.mentions.new(status: status)
-      mentions << mention if mention.save
-
-      "@#{mentioned_account.acct}"
+      new_mention = acc.mentions.new(status: status)
+      create_notification(new_mention) if new_mention.save
     end
-
-    status.save!
-
-    mentions.each { |mention| create_notification(mention) }
   end
 
   private

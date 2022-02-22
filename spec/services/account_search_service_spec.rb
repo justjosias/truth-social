@@ -27,7 +27,7 @@ describe AccountSearchService, type: :service do
       end
     end
 
-    context 'when there is a local domain' do
+    context 'when there is no domain because we dont need domains and dont support them' do
       around do |example|
         before = Rails.configuration.x.local_domain
 
@@ -36,35 +36,14 @@ describe AccountSearchService, type: :service do
         Rails.configuration.x.local_domain = before
       end
 
-      it 'returns exact match first' do
+      it 'returns all matches and respects the limit' do
         remote     = Fabricate(:account, username: 'a', domain: 'remote', display_name: 'e')
         remote_too = Fabricate(:account, username: 'b', domain: 'remote', display_name: 'e')
         exact      = Fabricate(:account, username: 'e')
 
-        Rails.configuration.x.local_domain = 'example.com'
-
-        results = subject.call('e@example.com', nil, limit: 2)
+        results = subject.call('e', nil, limit: 2)
 
         expect(results.size).to eq 2
-        expect(results).to eq([exact, remote]).or eq([exact, remote_too])
-      end
-    end
-
-    context 'when there is a domain but no exact match' do
-      it 'follows the remote account when resolve is true' do
-        service = double(call: nil)
-        allow(ResolveAccountService).to receive(:new).and_return(service)
-
-        results = subject.call('newuser@remote.com', nil, limit: 10, resolve: true)
-        expect(service).to have_received(:call).with('newuser@remote.com')
-      end
-
-      it 'does not follow the remote account when resolve is false' do
-        service = double(call: nil)
-        allow(ResolveAccountService).to receive(:new).and_return(service)
-
-        results = subject.call('newuser@remote.com', nil, limit: 10, resolve: false)
-        expect(service).not_to have_received(:call)
       end
     end
 

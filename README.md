@@ -80,40 +80,6 @@ A **Vagrant** configuration is included for development purposes.
 
 Setting up a dev environment will vary based on your operating system. These set of instructions are assuming you are running on a Mac.
 
-#### Clone the repo
-
-`git clone #{repo}`
-
-`cd social-v1`
-
-The development has occured on the develop branch so check that one out.
-
-`git checkout develop`
-
-#### Install dependencies and setup DB
-
-`yarn install && bundle install`
-
-You will also need to install direnv for some config
-
-`brew install direnv`
-
-Setup your db
-
-`RAILS_ENV=development rails db:setup`
-
-To run all the processes needed for mastodon, you should install foreman
-
-`gem install foreman --no-document`
-
-We need to enable redis caching locally so the sessions can be written there
-
-`RAILS_ENV=development rails dev:cache`
-
-#### Running the server
-
-`foreman start`
-
 ## License
 
 Copyright (C) 2016-2021 Eugen Rochko & other Mastodon contributors (see [AUTHORS.md](AUTHORS.md))

@@ -10,13 +10,6 @@ describe 'Link headers' do
       get short_account_path(username: account)
     end
 
-    it 'contains webfinger url in link header' do
-      link_header = link_header_with_type('application/jrd+json')
-
-      expect(link_header.href).to match 'http://www.example.com/.well-known/webfinger?resource=acct%3Atest'
-      expect(link_header.attr_pairs.first).to eq %w(rel lrdd)
-    end
-
     it 'contains activitypub url in link header' do
       link_header = link_header_with_type('application/activity+json')
 

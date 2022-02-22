@@ -2,14 +2,14 @@
 
 # == Schema Information
 #
-# Table name: account_aliases
+# Table name: logs
 #
-#  id            :bigint(8)        not null, primary key
-#  event         :string
-#  message       :text             default("")
-#  app_id        :string
-#  created_at :datetime            not null
-#  updated_at :datetime            not null
+#  id         :bigint(8)        not null, primary key
+#  event      :string           not null
+#  message    :text             default(""), not null
+#  app_id     :string           not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
 #
 
 class Log < ApplicationRecord

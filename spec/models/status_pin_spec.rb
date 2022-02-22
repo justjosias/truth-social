@@ -55,7 +55,7 @@ RSpec.describe StatusPin, type: :model do
     end
 
     it 'allows pins above the max for remote accounts' do
-      account = Fabricate(:account, domain: 'remote.test', username: 'bob', url: 'https://remote.test/')
+      account = Fabricate(:account, domain: 'remote.example.com', username: 'bob', url: 'https://remote.example.com/')
       status = []
 
       (max_pins + 1).times do |i|

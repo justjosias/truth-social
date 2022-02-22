@@ -6,6 +6,7 @@ module Remotable
   class_methods do
     def remotable_attachment(attachment_name, limit, suppress_errors: true, download_on_assign: true, attribute_name: nil)
       attribute_name ||= "#{attachment_name}_remote_url".to_sym
+      domains_to_retry = ENV['DOMAINS_TO_RETRY'].split(',')
 
       define_method("download_#{attachment_name}!") do |url = nil|
         url ||= self[attribute_name]
@@ -29,7 +30,7 @@ module Remotable
         rescue Mastodon::UnexpectedResponseError, HTTP::TimeoutError, HTTP::ConnectionError, OpenSSL::SSL::SSLError => e
           Rails.logger.debug "Error fetching remote #{attachment_name}: #{e}"
           public_send("#{attachment_name}=", nil) if public_send("#{attachment_name}_file_name").present?
-          raise e unless suppress_errors
+          raise e unless suppress_errors && !should_raise_error(parsed_url.host)
         rescue Paperclip::Errors::NotIdentifiedByImageMagickError, Addressable::URI::InvalidURIError, Mastodon::HostValidationError, Mastodon::LengthValidationError, Paperclip::Error, Mastodon::DimensionsValidationError, Mastodon::StreamValidationError => e
           Rails.logger.debug "Error fetching remote #{attachment_name}: #{e}"
           public_send("#{attachment_name}=", nil) if public_send("#{attachment_name}_file_name").present?
@@ -44,6 +45,10 @@ module Remotable
         self[attribute_name] = url if has_attribute?(attribute_name)
 
         public_send("download_#{attachment_name}!", url) if download_on_assign
+      end
+
+      define_method(:should_raise_error) do |url|
+        domains_to_retry.include? url
       end
 
       alias_method("reset_#{attachment_name}!", "download_#{attachment_name}!")

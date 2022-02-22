@@ -7,7 +7,6 @@ module Settings
       noindex
     ).freeze
 
-    # TODO: @features
     DEFAULTING_TO_TRUE = %w(
       use_pending_items
       crop_images

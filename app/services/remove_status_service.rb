@@ -41,6 +41,7 @@ class RemoveStatusService < BaseService
           remove_from_public
           remove_from_media if @status.media_attachments.any?
           remove_media
+          notify_user if options[:notify_user]
         end
 
         @status.destroy! if @options[:immediate] || !@status.reported?
@@ -66,6 +67,10 @@ class RemoveStatusService < BaseService
     @account.lists_for_local_distribution.select(:id, :account_id).reorder(nil).find_each do |list|
       FeedManager.instance.unpush_from_list(list, @status)
     end
+  end
+
+  def notify_user
+    UserMailer.status_removed(@account.user, @status.id).deliver_later!
   end
 
   def remove_from_mentions

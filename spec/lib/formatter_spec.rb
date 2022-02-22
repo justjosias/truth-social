@@ -2,7 +2,9 @@ require 'rails_helper'
 
 RSpec.describe Formatter do
   let(:local_account)  { Fabricate(:account, domain: nil, username: 'alice') }
-  let(:remote_account) { Fabricate(:account, domain: 'remote.test', username: 'bob', url: 'https://remote.test/') }
+  let(:local_account2)  { Fabricate(:account, domain: nil, username: 'faust') }
+  let(:local_account3)  { Fabricate(:account, domain: nil, username: 'hyde') }
+  let(:remote_account) { Fabricate(:account, domain: 'remote.example.com', username: 'bob', url: 'https://remote.example.com/') }
 
   shared_examples 'encode and link URLs' do
     context 'given a stand-alone medium URL' do
@@ -335,6 +337,22 @@ RSpec.describe Formatter do
         end
       end
 
+      context 'given a post containing multiple linkable accounts in the text' do
+        let(:status) { Fabricate(:status, text: 'hey @alice and @faust and @hyde you guys are cool') }
+
+        before do
+          local_account
+          local_account2
+          local_account3
+        end
+
+        it 'creates account links' do
+          is_expected.to include '<a href="https://cb6e6126.ngrok.io/@alice" class="u-url mention">@<span>alice</span></a></span>'
+          is_expected.to include '<a href="https://cb6e6126.ngrok.io/@faust" class="u-url mention">@<span>faust</span></a></span>'
+          is_expected.to include '<a href="https://cb6e6126.ngrok.io/@hyde" class="u-url mention">@<span>hyde</span></a></span>'
+        end
+      end
+
       context 'given a post containing unlinkable mentions' do
         let(:status) { Fabricate(:status, text: '@alice', uri: nil) }
 
@@ -505,12 +523,12 @@ RSpec.describe Formatter do
       end
 
       context 'given a post containing linkable mentions for remote accounts' do
-        let(:text) { '@bob@remote.test' }
+        let(:text) { '@bob@remote.example.com' }
 
         before { remote_account }
 
         it 'creates a mention link' do
-          is_expected.to eq '<p><span class="h-card"><a href="https://remote.test/" class="u-url mention">@<span>bob</span></a></span></p>'
+          is_expected.to eq '<p><span class="h-card"><a href="https://remote.example.com/" class="u-url mention">@<span>bob</span></a></span></p>'
         end
       end
 

@@ -21,6 +21,10 @@ class UserPolicy < ApplicationPolicy
     staff?
   end
 
+  def update?
+    admin?
+  end
+
   def approve?
     staff? && !record.approved?
   end
@@ -31,6 +35,10 @@ class UserPolicy < ApplicationPolicy
 
   def disable?
     staff? && !record.admin?
+  end
+
+  def ban?
+    admin? && !record.admin?
   end
 
   def promote?

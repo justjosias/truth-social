@@ -3,3 +3,7 @@
 <%= raw t('notification_mailer.follow.body', name: @account.acct) %>
 
 <%= raw t('application_mailer.view')%> <%= web_url("accounts/#{@account.id}") %>
+
+If you no longer wish to receive transactional emails go here: 
+
+<%= @url_string %>

@@ -23,7 +23,7 @@ describe Api::Web::EmbedsController do
     end
 
     context 'when fails to find status' do
-      let(:url) { 'https://host.test/oembed.html' }
+      let(:url) { 'https://host.example.com/oembed.html' }
       let(:service_instance) { double('fetch_oembed_service') }
 
       before do

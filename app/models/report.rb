@@ -15,6 +15,7 @@
 #  assigned_account_id        :bigint(8)
 #  uri                        :string
 #  forwarded                  :boolean
+#  rule_ids                   :integer          default([]), not null, is an Array
 #
 
 class Report < ApplicationRecord
@@ -48,6 +49,10 @@ class Report < ApplicationRecord
 
   def statuses
     Status.with_discarded.where(id: status_ids).includes(:account, :media_attachments, :mentions)
+  end
+
+  def rules
+    Rule.where(id: rule_ids)
   end
 
   def media_attachments

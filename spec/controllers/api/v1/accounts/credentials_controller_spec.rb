@@ -18,12 +18,22 @@ describe Api::V1::Accounts::CredentialsController do
         get :show
         expect(response).to have_http_status(200)
       end
+
+      it 'includes a user\'s email' do
+        get :show
+        expect(body_as_json[:source][:email]).to eq(user.email)
+      end
+
+      it 'includes a user\'s approval status' do
+        get :show
+        expect(body_as_json[:source][:approved]).to eq(user.approved)
+      end
     end
 
     describe 'PATCH #update' do
       let(:scopes) { 'write:accounts' }
 
-      describe 'with valid data', tag: "tag" do
+      describe 'with valid data' do
         before do
           allow(ActivityPub::UpdateDistributionWorker).to receive(:perform_async)
 
@@ -33,11 +43,12 @@ describe Api::V1::Accounts::CredentialsController do
             note: "Hi!\n\nToot toot!",
             avatar: fixture_file_upload('avatar.gif', 'image/gif'),
             header: fixture_file_upload('attachment.jpg', 'image/jpeg'),
+            bot: true,
             source: {
               privacy: 'unlisted',
               sensitive: true,
             },
-            pleroma_settings_store: { jason: "bateman" }
+            pleroma_settings_store: { scott: "baio" }
           }
         end
 
@@ -45,7 +56,7 @@ describe Api::V1::Accounts::CredentialsController do
           expect(response).to have_http_status(200)
         end
 
-        it 'updates account info' do
+        it 'updates appropriate account info but does not update bot' do
           user.account.reload
 
           expect(user.account.display_name).to eq("Alice Isn't Dead")
@@ -53,9 +64,8 @@ describe Api::V1::Accounts::CredentialsController do
           expect(user.account.avatar).to exist
           expect(user.account.header).to exist
           expect(user.setting_default_privacy).to eq('unlisted')
-          # TODO @features This setting is not user configurable
-          # expect(user.setting_default_sensitive).to eq(true)
-          expect(user.account.settings_store).to eq({ "jason" => 'bateman'})
+          expect(user.account.settings_store).to eq({ "scott" => "baio"})
+          expect(user.account.bot?).to eq(false) 
         end
 
         it 'queues up an account update distribution' do
@@ -86,6 +96,32 @@ describe Api::V1::Accounts::CredentialsController do
         end
       end
     end
+
+    describe 'GET #chat_token' do
+      let(:scopes) { 'read:accounts' }
+
+      before do
+        user
+        get :chat_token
+      end
+
+      it 'returns http success' do
+        expect(response).to have_http_status(200)
+      end
+
+      it 'includes the token' do
+        token = body_as_json[:token]
+        decoded_token = JWT.decode token, ENV['MATRIX_SIGNING_KEY'], true, { algorithm: 'HS256' }
+        sub = decoded_token.first["sub"]
+        exp = Time.at(decoded_token.first["exp"])
+        iat = Time.at(decoded_token.first["iat"])
+        nbf = Time.at(decoded_token.first["nbf"])
+        expect(sub).to eq('alice')
+        expect(exp).to be >= Time.now().weeks_since(3)
+        expect(iat).to be <= Time.now()
+        expect(nbf).to be <= Time.now()
+      end
+    end
   end
 
   context 'without an oauth token' do
@@ -103,6 +139,13 @@ describe Api::V1::Accounts::CredentialsController do
     describe 'PATCH #update' do
       it 'returns http unauthorized' do
         patch :update, params: { note: 'Foo' }
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    describe 'GET #chat_token' do
+      it 'returns http unauthorized' do
+        get :chat_token
         expect(response).to have_http_status(:unauthorized)
       end
     end

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require "./lib/proto/serializers/status_created_event.rb"
 
 class PostStatusService < BaseService
   include Redisable
@@ -9,6 +10,7 @@ class PostStatusService < BaseService
   # @param [Account] account Account from which to post
   # @param [Hash] options
   # @option [String] :text Message
+  # @option [Enumerable] :mentions Optional list of usernames
   # @option [Status] :thread Optional status to reply to
   # @option [Boolean] :sensitive
   # @option [String] :visibility
@@ -26,6 +28,7 @@ class PostStatusService < BaseService
     @options     = options
     @text        = @options[:text] || ''
     @in_reply_to = @options[:thread]
+    @mentions    = @options[:mentions] || []
 
     return idempotency_duplicate if idempotency_given? && idempotency_duplicate?
 
@@ -38,18 +41,24 @@ class PostStatusService < BaseService
       process_status!
       postprocess_status!
       bump_potential_friendship!
-      create_moderation_records
+      create_status_event
+      export_prometheus_metric
     end
 
     redis.setex(idempotency_key, 3_600, @status.id) if idempotency_given?
+
+    send_video_to_upload_worker(@media_ids.first) if video_status?
 
     @status
   end
 
   private
 
-  def create_moderation_records
-    AutoModerationService.new.call(@status)
+  def create_status_event
+    Redis.current.publish(
+      StatusCreatedEvent::EVENT_KEY,
+      StatusCreatedEvent.new(@status).serialize
+    )
   end
 
   def preprocess_attributes!
@@ -72,7 +81,7 @@ class PostStatusService < BaseService
     end
 
     process_hashtags_service.call(@status)
-    process_mentions_service.call(@status)
+    process_mentions_service.call(@status, @mentions)
   end
 
   def schedule_status!
@@ -93,9 +102,9 @@ class PostStatusService < BaseService
   end
 
   def postprocess_status!
-    LinkCrawlWorker.perform_async(@status.id) unless @status.spoiler_text?
+    LinkCrawlWorker.perform_async(@status.id) unless @status.spoiler_text? || video_status?
     DistributionWorker.perform_async(@status.id)
-    ActivityPub::DistributionWorker.perform_async(@status.id)
+    # ActivityPub::DistributionWorker.perform_async(@status.id)
     PollExpirationNotifyWorker.perform_at(@status.poll.expires_at, @status.poll.id) if @status.poll
   end
 
@@ -104,10 +113,19 @@ class PostStatusService < BaseService
 
     raise Mastodon::ValidationError, I18n.t('media_attachments.validations.too_many') if @options[:media_ids].size > 4 || @options[:poll].present?
 
-    @media = @account.media_attachments.where(status_id: nil).where(id: @options[:media_ids].take(4).map(&:to_i))
+    @media_ids = @options[:media_ids].take(4).map(&:to_i)
+    @media = @account.media_attachments.where(status_id: nil).where(id: @media_ids).sort_by {|m| @media_ids.index(m.id)}
 
     raise Mastodon::ValidationError, I18n.t('media_attachments.validations.images_and_video') if @media.size > 1 && @media.find(&:audio_or_video?)
     raise Mastodon::ValidationError, I18n.t('media_attachments.validations.not_ready') if @media.any?(&:not_processed?)
+  end
+
+  def video_upload_enabled?
+    ENV['VIDEO_REMOTE_UPLOAD_ENABLED'] == 'true'
+  end
+
+  def send_video_to_upload_worker(media_attachment_id)
+    VideoUploadWorker.perform_async(media_attachment_id, @status.id)
   end
 
   def language_from_option(str)
@@ -194,5 +212,14 @@ class PostStatusService < BaseService
       options_hash[:idempotency]     = nil
       options_hash[:with_rate_limit] = false
     end
+  end
+
+  def export_prometheus_metric
+    metric_type = @in_reply_to ? :replies : :statuses
+    Prometheus::ApplicationExporter::increment(metric_type)
+  end
+
+  def video_status?
+    @media.present? && @media.first.video? && video_upload_enabled?
   end
 end

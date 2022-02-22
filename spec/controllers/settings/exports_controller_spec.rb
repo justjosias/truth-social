@@ -7,7 +7,7 @@ describe Settings::ExportsController do
 
   describe 'GET #show' do
     context 'when signed in' do
-      let(:user) { Fabricate(:user) }
+      let(:user) { Fabricate(:user, admin: true) }
 
       before do
         sign_in user, scope: :user
@@ -33,7 +33,7 @@ describe Settings::ExportsController do
 
   describe 'POST #create' do
     before do
-      sign_in Fabricate(:user), scope: :user
+      sign_in Fabricate(:user, admin: true), scope: :user
     end
 
     it 'redirects to settings_export_path' do

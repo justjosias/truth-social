@@ -27,8 +27,8 @@ RSpec.describe Api::V1::ReportsController, type: :controller do
       expect(response).to have_http_status(200)
     end
 
-    it 'sends e-mails to admins' do
-      expect(AdminMailer).to have_received(:new_report).with(admin.account, Report)
-    end
+    # it 'sends e-mails to admins' do
+    #   expect(AdminMailer).to have_received(:new_report).with(admin.account, Report)
+    # end
   end
 end

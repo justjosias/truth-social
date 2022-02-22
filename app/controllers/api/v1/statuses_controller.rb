@@ -37,6 +37,7 @@ class Api::V1::StatusesController < Api::BaseController
   def create
     @status = PostStatusService.new.call(current_user.account,
                                          text: status_params[:status],
+                                         mentions: status_params[:to],
                                          thread: @thread,
                                          media_ids: status_params[:media_ids],
                                          sensitive: status_params[:sensitive],
@@ -55,7 +56,7 @@ class Api::V1::StatusesController < Api::BaseController
     @status = Status.where(account_id: current_user.account).find(params[:id])
     authorize @status, :destroy?
 
-    @status.discard
+    @status.update!(deleted_at: Time.current, deleted_by_id: current_user&.account_id)
     RemovalWorker.perform_async(@status.id, redraft: true)
     @status.account.statuses_count = @status.account.statuses_count - 1
 
@@ -85,6 +86,7 @@ class Api::V1::StatusesController < Api::BaseController
       :spoiler_text,
       :visibility,
       :scheduled_at,
+      to: [],
       media_ids: [],
       poll: [
         :multiple,

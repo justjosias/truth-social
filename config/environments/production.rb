@@ -79,9 +79,19 @@ Rails.application.configure do
   config.lograge.enabled = true
 
   config.lograge.custom_payload do |controller|
-    if controller.respond_to?(:signed_request?) && controller.signed_request?
-      { key: controller.signature_key_id }
+    payload_data = {
+      user_ip: controller.request.remote_ip,
+    }
+
+    if defined? controller.current_user_id
+      payload_data[:user_id] = controller.current_user_id
     end
+
+    if controller.respond_to?(:signed_request?) && controller.signed_request?
+      payload_data[:key] = controller.signature_key_id
+    end
+
+    payload_data
   end
 
   # Do not dump schema after migrations.

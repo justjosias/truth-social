@@ -1,6 +1,8 @@
 # frozen_string_literal: true
+require 'new_relic/agent/method_tracer'
 
 class FeedInsertWorker
+  include ::NewRelic::Agent::MethodTracer
   include Sidekiq::Worker
 
   def perform(status_id, id, type = :home)
@@ -28,6 +30,7 @@ class FeedInsertWorker
     perform_push
     perform_notify if notify?
   end
+  add_method_tracer :check_and_insert, 'FeedInsertWorker/check_and_insert'
 
   def feed_filtered?
     case @type
@@ -52,8 +55,10 @@ class FeedInsertWorker
       FeedManager.instance.push_to_list(@list, @status)
     end
   end
+  add_method_tracer :perform_push, 'FeedInsertWorker/perform_push'
 
   def perform_notify
-    NotifyService.new.call(@follower, :status, @status)
+    NotifyServiceWorker.perform_async(@follower, :status, @status)
   end
+  add_method_tracer :perform_notify, 'FeedInsertWorker/perform_notify'
 end

@@ -5,6 +5,8 @@ require 'rails_helper'
 describe AuthorizeInteractionsController do
   render_views
 
+  before { skip }
+
   describe 'GET #show' do
     describe 'when signed out' do
       it 'redirects to sign in page' do

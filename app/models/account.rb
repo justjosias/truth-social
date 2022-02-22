@@ -3,6 +3,7 @@
 #
 # Table name: accounts
 #
+#  id                            :bigint(8)        not null, primary key
 #  username                      :string           default(""), not null
 #  domain                        :string
 #  private_key                   :text
@@ -30,7 +31,6 @@
 #  shared_inbox_url              :string           default(""), not null
 #  followers_url                 :string           default(""), not null
 #  protocol                      :integer          default("ostatus"), not null
-#  id                            :bigint(8)        not null, primary key
 #  memorial                      :boolean          default(FALSE), not null
 #  moved_to_account_id           :bigint(8)
 #  featured_collection_url       :string
@@ -65,6 +65,8 @@ class Account < ApplicationRecord
   USERNAME_RE = /[a-z0-9_]+([a-z0-9_\.-]+[a-z0-9_]+)?/i
   MENTION_RE  = /(?<=^|[^\/[:word:]])@((#{USERNAME_RE})(?:@[[:word:]\.\-]+[a-z0-9]+)?)/i
 
+  JAVASCRIPT_RE = /^[\u0000-\u001F ]*j[\r\n\t]*a[\r\n\t]*v[\r\n\t]*a[\r\n\t]*s[\r\n\t]*c[\r\n\t]*r[\r\n\t]*i[\r\n\t]*p[\r\n\t]*t[\r\n\t]*\:/i
+
   include AccountAssociations
   include AccountAvatar
   include AccountFinderConcern
@@ -97,6 +99,8 @@ class Account < ApplicationRecord
   validates :display_name, length: { maximum: 30 }, if: -> { local? && will_save_change_to_display_name? }
   validates :note, note_length: { maximum: 500 }, if: -> { local? && will_save_change_to_note? }
   validates :fields, length: { maximum: 4 }, if: -> { local? && will_save_change_to_fields? }
+  
+  validate :check_website_field_for_javascript
 
   scope :remote, -> { where.not(domain: nil) }
   scope :local, -> { where(domain: nil) }
@@ -380,10 +384,10 @@ class Account < ApplicationRecord
     username
   end
 
-  # TODO: follow_requests profile feature toggle "locked"
-  # this should override the db value of "locked" for an
-  # account. Remove this method if the locked feature is
-  # re-enabled in the future.
+  def check_website_field_for_javascript
+    errors.add(:base, "Please enter a valid website") if JAVASCRIPT_RE.match(website)
+  end
+
   def locked
     false
   end
@@ -454,6 +458,18 @@ class Account < ApplicationRecord
     def inboxes
       urls = reorder(nil).where(protocol: :activitypub).group(:preferred_inbox_url).pluck(Arel.sql("coalesce(nullif(accounts.shared_inbox_url, ''), accounts.inbox_url) AS preferred_inbox_url"))
       DeliveryFailureTracker.without_unavailable(urls)
+    end
+
+    def ci_find_by_username(username = nil)
+      return nil unless username.present?
+
+      includes(:user).where("LOWER(username) = ?", username.downcase).take
+    end
+
+    def ci_find_by_usernames(usernames = [])
+      return Account.none if usernames.empty?
+
+      where("LOWER(username) IN (?)", usernames.compact.map { |un| un.downcase })
     end
 
     def search_for(terms, limit = 10, offset = 0)

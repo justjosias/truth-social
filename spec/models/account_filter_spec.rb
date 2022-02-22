@@ -24,6 +24,7 @@ describe AccountFilter do
         silenced: true,
         username: 'test',
         display_name: 'name',
+        sms: '234-555-2344',
         email: 'user@example.com',
       )
 
@@ -32,6 +33,7 @@ describe AccountFilter do
       allow(Account).to receive(:matches_display_name).and_return(Account.none)
       allow(Account).to receive(:matches_username).and_return(Account.none)
       allow(User).to receive(:matches_email).and_return(User.none)
+      allow(User).to receive(:matches_sms).and_return(User.none)
 
       filter.results
 
@@ -40,6 +42,7 @@ describe AccountFilter do
       expect(Account).to have_received(:matches_username).with('test')
       expect(Account).to have_received(:matches_display_name).with('name')
       expect(User).to have_received(:matches_email).with('user@example.com')
+      expect(User).to have_received(:matches_sms).with('234-555-2344')
     end
 
     describe 'that call account methods' do

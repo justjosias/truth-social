@@ -12,7 +12,8 @@ class Api::V1::ReportsController < Api::BaseController
       reported_account,
       status_ids: reported_status_ids,
       comment: report_params[:comment],
-      forward: report_params[:forward]
+      forward: report_params[:forward],
+      rule_ids: reported_rule_ids
     )
 
     render json: @report, serializer: REST::ReportSerializer
@@ -24,8 +25,16 @@ class Api::V1::ReportsController < Api::BaseController
     reported_account.statuses.with_discarded.find(status_ids).pluck(:id)
   end
 
+  def reported_rule_ids
+    Rule.find(rule_ids).pluck(:id)
+  end
+
   def status_ids
     Array(report_params[:status_ids])
+  end
+
+  def rule_ids
+    Array(report_params[:rule_ids])
   end
 
   def reported_account
@@ -33,6 +42,6 @@ class Api::V1::ReportsController < Api::BaseController
   end
 
   def report_params
-    params.permit(:account_id, :comment, :forward, status_ids: [])
+    params.permit(:account_id, :comment, :forward, status_ids: [], rule_ids: [])
   end
 end

@@ -113,6 +113,38 @@ RSpec.describe NotifyService, type: :service do
     end
   end
 
+  describe 'user_approved' do
+    let(:user) { Fabricate(:user, approved: false) }
+
+    before do
+      ActionMailer::Base.deliveries.clear
+
+      notification_emails = user.settings.notification_emails
+      user.settings.notification_emails = notification_emails.merge('user_approved' => true)
+      user.update(approved: true)
+    end
+
+    it 'creates a notification' do
+      is_expected.to change(Notification, :count)
+    end
+
+    it 'sends an email' do
+      expect(ActionMailer::Base.deliveries.count).to eq(1)
+      expect(ActionMailer::Base.deliveries[0].subject).to eq(I18n.t('notification_mailer.user_approved.web.subject'))
+    end
+
+    it 'builds the right notification json' do
+      notification = ActiveModelSerializers::SerializableResource.new(
+        Notification.last,
+        serializer: Mobile::NotificationSerializer,
+        scope: OpenStruct.new(device_token: "a"),
+        scope_name: :current_push_subscription
+      ).as_json
+
+      expect(notification[:message]).to eq(I18n.t('notification_mailer.user_approved.subject'))
+    end
+  end
+
   context do
     let(:asshole)  { Fabricate(:account, username: 'asshole') }
     let(:reply_to) { Fabricate(:status, account: asshole) }

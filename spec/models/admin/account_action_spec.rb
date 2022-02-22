@@ -8,6 +8,7 @@ RSpec.describe Admin::AccountAction, type: :model do
     let(:account)        { Fabricate(:account, user: Fabricate(:user, admin: true)) }
     let(:target_account) { Fabricate(:account, user: Fabricate(:user)) }
     let(:type)           { 'disable' }
+    let(:base64_attachment) { "data:image/jpeg;base64,#{Base64.encode64(attachment_fixture("attachment.jpg").read)}" }
 
     before do
       account_action.assign_attributes(
@@ -15,6 +16,27 @@ RSpec.describe Admin::AccountAction, type: :model do
         current_account: account,
         target_account:  target_account
       )
+    end
+
+    context 'type is "ban"' do
+      let(:type) { "ban" }
+
+      it "bans user" do
+        Sidekiq::Testing.inline! do
+          subject
+        end
+        expect(target_account.reload).to be_suspended
+        expect(target_account.user).to be_disabled
+      end
+    end
+
+    context 'type is "enable"' do
+      let(:type) { "enable" }
+
+      it "enables user" do
+        subject
+        expect(target_account.user).to be_enabled
+      end
     end
 
     context 'type is "disable"' do
@@ -26,12 +48,59 @@ RSpec.describe Admin::AccountAction, type: :model do
       end
     end
 
+    context 'type is "remove_avatar"' do
+      let(:type) { 'remove_avatar' }
+
+      before do
+        target_account.update(avatar: base64_attachment)
+      end
+
+      it 'removes avatar' do
+        expect(target_account.avatar_original_url).to_not be_nil
+        subject
+
+        expect(target_account.avatar_original_url).to eq('/avatars/original/missing.png')
+      end
+    end
+
+    context 'type is "remove_header"' do
+      let(:type) { 'remove_header'}
+
+      before do
+        target_account.update(header: base64_attachment)
+      end
+
+      it 'removes header' do
+        subject
+        expect(target_account.header_original_url).to eq('/headers/original/missing.png')
+      end
+    end
+
     context 'type is "silence"' do
       let(:type) { 'silence' }
 
       it 'silences account' do
         subject
         expect(target_account).to be_silenced
+      end
+    end
+
+    context 'type is "unsilence"' do
+      let(:type) { "unsilence" }
+
+      it "silences account" do
+        subject
+        expect(target_account).to_not be_silenced
+      end
+    end
+
+    context 'type is "unsuspend"' do
+      let(:type) { 'unsuspend' }
+
+      it 'unsuspends account' do
+        target_account.update(suspension_origin: :local)
+        subject
+        expect(target_account).to_not be_suspended
       end
     end
 
@@ -49,6 +118,24 @@ RSpec.describe Admin::AccountAction, type: :model do
             subject
           end.to change { Admin::SuspensionWorker.jobs.size }.by 1
         end
+      end
+
+      it 'enqueues Admin::UnsuspensionWorker by 1' do
+        Sidekiq::Testing.fake! do
+          expect do
+            subject
+          end.to change { Admin::SuspensionWorker.jobs.size }.by 1
+        end
+      end
+
+      it 'bans when strikes have been exceeded' do
+        allow(AccountSuspensionPolicy).to receive(:new).and_return(double(strikes_expended?: true))
+        Sidekiq::Testing.inline! do
+          subject
+        end
+
+        expect(target_account.reload).to be_suspended
+        expect(target_account.user).to be_disabled
       end
     end
 
@@ -115,16 +202,16 @@ RSpec.describe Admin::AccountAction, type: :model do
     context 'account.local?' do
       let(:account) { Fabricate(:account, domain: nil) }
 
-      it 'returns ["none", "disable", "sensitive", "silence", "suspend", "verify"]' do
-        expect(subject).to eq %w(none disable sensitive silence suspend verify)
+      it 'returns ["none", "ban", "disable", "remove_avatar", "remove_header", "sensitive", "silence", "unsilence", "suspend", "unsuspend", "verify"]' do
+        expect(subject).to eq %w(none ban disable remove_avatar remove_header sensitive silence unsilence suspend unsuspend verify)
       end
     end
 
     context '!account.local?' do
       let(:account) { Fabricate(:account, domain: 'hoge.com') }
 
-      it 'returns ["sensitive", "silence", "suspend", "verify"]' do
-        expect(subject).to eq %w(sensitive silence suspend verify)
+      it 'returns ["ban", "remove_avatar", "remove_header", "sensitive", "silence", "unsilence", "suspend", "unsuspend", "verify"]' do
+        expect(subject).to eq %w(ban remove_avatar remove_header sensitive silence unsilence suspend unsuspend verify)
       end
     end
   end

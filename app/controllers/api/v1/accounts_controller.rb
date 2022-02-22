@@ -9,6 +9,7 @@ class Api::V1::AccountsController < Api::BaseController
 
   before_action :require_user!, except: [:show, :create]
   before_action :set_account, except: [:create]
+  before_action :set_invite, only: [:create]
   before_action :check_enabled_registrations, only: [:create]
 
   skip_before_action :require_authenticated_user!, only: :create
@@ -17,18 +18,6 @@ class Api::V1::AccountsController < Api::BaseController
 
   def show
     render json: @account, serializer: REST::AccountSerializer
-  end
-
-  def create
-    token    = AppSignUpService.new.call(doorkeeper_token.application, request.remote_ip, account_params)
-    response = Doorkeeper::OAuth::TokenResponse.new(token)
-
-    headers.merge!(response.headers)
-
-    self.response_body = Oj.dump(response.body)
-    self.status        = response.status
-  rescue ActiveRecord::RecordInvalid => e
-    render json: ValidationErrorFormatter.new(e, 'account.username': :username, 'invite_request.text': :reason).as_json, status: :unprocessable_entity
   end
 
   def follow
@@ -69,19 +58,28 @@ class Api::V1::AccountsController < Api::BaseController
     @account = Account.find(params[:id])
   end
 
+  def set_invite
+    @invite = Invite.find_by(code: account_params[:token])
+  end
+
   def relationships(**options)
     AccountRelationshipsPresenter.new([@account.id], current_user.account_id, **options)
   end
 
   def account_params
-    params.permit(:username, :email, :password, :agreement, :locale, :reason)
+    params.permit(:username, :email, :password, :token, :agreement, :locale, :reason)
   end
 
   def check_enabled_registrations
-    forbidden if single_user_mode? || !allowed_registrations?
+    forbidden if registrations_closed?
   end
 
-  def allowed_registrations?
-    Setting.registrations_mode != 'none'
+  def registrations_closed?
+    Setting.registrations_mode == 'none' && params[:token].blank?
   end
+
+  def export_prometheus_metric
+    Prometheus::ApplicationExporter::increment(:registrations)
+  end
+
 end

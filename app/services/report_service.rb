@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require "./lib/proto/serializers/report_created_event.rb"
 
 class ReportService < BaseService
   include Payloadable
@@ -7,15 +8,17 @@ class ReportService < BaseService
     @source_account = source_account
     @target_account = target_account
     @status_ids     = options.delete(:status_ids) || []
+    @rule_ids       = options.delete(:rule_ids) || []
     @comment        = options.delete(:comment) || ''
     @options        = options
 
     raise ActiveRecord::RecordNotFound if @target_account.suspended?
 
     create_report!
-    notify_staff!
+    publish_event!
+    #notify_staff!
     forward_to_origin! if !@target_account.local? && ActiveModel::Type::Boolean.new.cast(@options[:forward])
-
+    export_prometheus_metric
     @report
   end
 
@@ -25,9 +28,17 @@ class ReportService < BaseService
     @report = @source_account.reports.create!(
       target_account: @target_account,
       status_ids: @status_ids,
+      rule_ids: @rule_ids,
       comment: @comment,
       uri: @options[:uri],
       forwarded: ActiveModel::Type::Boolean.new.cast(@options[:forward])
+    )
+  end
+
+  def publish_event!
+    Redis.current.publish(
+      ReportCreatedEvent::EVENT_KEY,
+      ReportCreatedEvent.new(@report).serialize
     )
   end
 
@@ -52,5 +63,9 @@ class ReportService < BaseService
 
   def some_local_account
     @some_local_account ||= Account.representative
+  end
+
+  def export_prometheus_metric
+    Prometheus::ApplicationExporter::increment(:reports)
   end
 end

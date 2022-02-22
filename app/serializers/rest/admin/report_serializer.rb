@@ -8,7 +8,8 @@ class REST::Admin::ReportSerializer < ActiveModel::Serializer
   has_one :assigned_account, serializer: REST::Admin::AccountSerializer
   has_one :action_taken_by_account, serializer: REST::Admin::AccountSerializer
 
-  has_many :statuses, serializer: REST::StatusSerializer
+  has_many :statuses, serializer: REST::Admin::StatusSerializer
+  has_many :rules, serializer: REST::RuleSerializer
 
   def id
     object.id.to_s

@@ -168,35 +168,6 @@ RSpec.describe Auth::RegistrationsController, type: :controller do
         user = User.find_by(email: 'test@example.com')
         expect(user).to_not be_nil
         expect(user.locale).to eq(accept_language)
-        expect(user.approved).to eq(false)
-      end
-    end
-
-    context 'approval-based registrations with expired invite' do
-      around do |example|
-        registrations_mode = Setting.registrations_mode
-        example.run
-        Setting.registrations_mode = registrations_mode
-      end
-
-      subject do
-        Setting.registrations_mode = 'approved'
-        request.headers["Accept-Language"] = accept_language
-        invite = Fabricate(:invite, max_uses: nil, expires_at: 1.hour.ago, email: 'test@example.com', users: [])
-        post :create, params: { user: { account_attributes: { username: 'test' }, email: 'test@example.com', password: '12345678', password_confirmation: '12345678', 'invite_code': invite.code, agreement: 'true' } }
-      end
-
-      it 'redirects to setup' do
-        subject
-        expect(response).to redirect_to auth_setup_path
-      end
-
-      it 'creates user' do
-        subject
-        user = User.find_by(email: 'test@example.com')
-        expect(user).to_not be_nil
-        expect(user.locale).to eq(accept_language)
-        expect(user.approved).to eq(false)
       end
     end
 

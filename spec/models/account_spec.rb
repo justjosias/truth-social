@@ -94,14 +94,14 @@ RSpec.describe Account, type: :model do
 
   describe '#save_with_optional_media!' do
     before do
-      stub_request(:get, 'https://remote.test/valid_avatar').to_return(request_fixture('avatar.txt'))
-      stub_request(:get, 'https://remote.test/invalid_avatar').to_return(request_fixture('feed.txt'))
+      stub_request(:get, 'https://remote.example.com/valid_avatar').to_return(request_fixture('avatar.txt'))
+      stub_request(:get, 'https://remote.example.com/invalid_avatar').to_return(request_fixture('feed.txt'))
     end
 
     let(:account) do
       Fabricate(:account,
-                avatar_remote_url: 'https://remote.test/valid_avatar',
-                header_remote_url: 'https://remote.test/valid_avatar')
+                avatar_remote_url: 'https://remote.example.com/valid_avatar',
+                header_remote_url: 'https://remote.example.com/valid_avatar')
     end
 
     let!(:expectation) { account.dup }
@@ -121,12 +121,12 @@ RSpec.describe Account, type: :model do
 
     context 'with invalid properties' do
       before do
-        account.avatar_remote_url = 'https://remote.test/invalid_avatar'
+        account.avatar_remote_url = 'https://remote.example.com/invalid_avatar'
         account.save_with_optional_media!
       end
 
       it 'sets default avatar, header, avatar_remote_url, and header_remote_url' do
-        expect(account.avatar_remote_url).to eq 'https://remote.test/invalid_avatar'
+        expect(account.avatar_remote_url).to eq 'https://remote.example.com/invalid_avatar'
         expect(account.header_remote_url).to eq expectation.header_remote_url
         expect(account.avatar_file_name).to  eq nil
         expect(account.header_file_name).to  eq nil
@@ -306,6 +306,80 @@ RSpec.describe Account, type: :model do
       account = Fabricate(:account)
       account.block_domain!('domain')
       expect(account.excluded_from_timeline_domains).to match_array ['domain']
+    end
+  end
+
+  describe '#ci_find_by_username' do
+    let(:account) { Fabricate(:account, username: 'Alice') }
+
+    before do
+      account
+    end
+
+    it 'finds an account by username' do
+      results = Account.ci_find_by_username('Alice')
+      expect(results.id).to eq(account.id)
+    end
+
+    it 'finds an account by username case insensitive' do
+      results = Account.ci_find_by_username('aliCe')
+      expect(results.id).to eq(account.id)
+    end
+
+    it 'finds an account by username when all search is lowercase' do
+      results = Account.ci_find_by_username('alice')
+      expect(results.id).to eq(account.id)
+    end
+
+    it 'returns nil when a username is not present' do
+      results = Account.ci_find_by_username()
+      expect(results).to be_nil
+    end
+  end
+
+  describe '#ci_find_by_usernames' do
+    let(:account_names) { ['Don', 'Damon', 'Mark', 'Ryne', 'Shawon', 'Vance', 'Dwight', 'Jerome', 'Andre'] }
+
+    before do
+      account_names.each do |an|
+        Fabricate(:account, username: an)
+      end
+    end
+
+    it 'finds an accounts by usernames' do
+      results = Account.ci_find_by_usernames(account_names)
+
+      expect(results.length).to eq(account_names.length)
+    end
+
+    it 'finds accounts by usernames case insensitive' do
+      results = Account.ci_find_by_usernames(['dOn', 'mArk', 'ryNe'])
+      expect(results.length).to eq(3)
+    end
+
+    it 'returns an empty relation when a usernames is not present' do
+      results = Account.ci_find_by_usernames()
+      expect(results.length).to eq(0)
+    end
+
+    it 'returns usernames correctly when a some of the names are not found' do
+      results = Account.ci_find_by_usernames(['dOn', 'mArk', 'ryNe', 'billyBob'])
+      expect(results.length).to eq(3)
+    end
+
+    it 'returns usernames correctly with an empty string in the array' do
+      results = Account.ci_find_by_usernames(['dOn', '', 'ryNe', 'billyBob'])
+      expect(results.length).to eq(2)
+    end
+
+    it 'returns usernames correctly with a nil in the array' do
+      results = Account.ci_find_by_usernames(['dOn', nil, 'ryNe', 'billyBob'])
+      expect(results.length).to eq(2)
+    end
+
+    it 'only returns one of each accounts' do
+      results = Account.ci_find_by_usernames(['Don', 'Ryne', 'Don'])
+      expect(results.length).to eq(2)
     end
   end
 

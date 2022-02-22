@@ -26,9 +26,23 @@ test:
 
 production:
   <<: *default
+  prepared_statements: <%= ENV['PREPARED_STATEMENTS'] || 'false' %>
+<% if ENV['DB_REPLICA_ENABLED'].present? && ENV['DB_REPLICA_ENABLED'] == 'true' %>
+  adapter: postgresql_makara
+  makara:
+    id: postgres
+    sticky: true
+    connections:
+      - role: master
+        blacklist_duration: 0
+        url: postgresql://<%= ENV['DB_USER'] || 'truth' %>:<%= ENV['DB_PASS'] || '' %>@<%= ENV['DB_HOST'] || 'localhost' %>:<%= ENV['DB_PORT'] || 5432 %>/<%= ENV['DB_NAME'] || 'truth_production' %>
+      - role: slave
+        blacklist_duration: 0
+        url: postgresql://<%= ENV['DB_USER'] || 'truth' %>:<%= ENV['DB_PASS'] || '' %>@<%= ENV['DB_HOST_REPLICA'] || 'localhost' %>:<%= ENV['DB_PORT_REPLICA'] || 5432 %>/<%= ENV['DB_NAME'] || 'truth_production' %>
+<% else %>
   database: <%= ENV['DB_NAME'] || 'truth_production' %>
   username: <%= ENV['DB_USER'] || 'truth' %>
   password: <%= ENV['DB_PASS'] || '' %>
   host: <%= ENV['DB_HOST'] || 'localhost' %>
   port: <%= ENV['DB_PORT'] || 5432 %>
-  prepared_statements: <%= ENV['PREPARED_STATEMENTS'] || 'true' %>
+<% end %>

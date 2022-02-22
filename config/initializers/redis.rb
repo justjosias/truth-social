@@ -2,7 +2,8 @@
 
 redis_connection = Redis.new(
   url: ENV['REDIS_URL'],
-  driver: :hiredis
+  driver: :hiredis,
+  reconnect_attempts: 2
 )
 
 namespace = ENV.fetch('REDIS_NAMESPACE') { nil }

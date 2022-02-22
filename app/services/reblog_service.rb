@@ -34,6 +34,7 @@ class ReblogService < BaseService
     create_notification(reblog)
     bump_potential_friendship(account, reblog)
     record_use(account, reblog)
+    export_prometheus_metric
 
     reblog
   end
@@ -70,5 +71,9 @@ class ReblogService < BaseService
 
   def build_json(reblog)
     Oj.dump(serialize_payload(ActivityPub::ActivityPresenter.from_status(reblog), ActivityPub::ActivitySerializer, signer: reblog.account))
+  end
+
+  def export_prometheus_metric
+    Prometheus::ApplicationExporter::increment(:retruths)
   end
 end

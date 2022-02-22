@@ -9,6 +9,8 @@ class NotificationMailer < ApplicationMailer
   def mention(recipient, notification)
     @me     = recipient
     @status = notification.target_status
+    @unsubscribe_token = @me.user.user_token
+    @url_string = unsubscribe_url + '?token="' + CGI.escape(@unsubscribe_token) + '"'
 
     return unless @me.user.functional? && @status.present?
 
@@ -21,6 +23,8 @@ class NotificationMailer < ApplicationMailer
   def follow(recipient, notification)
     @me      = recipient
     @account = notification.from_account
+    @unsubscribe_token = @me.user.user_token
+    @url_string = unsubscribe_url + '?token="' + CGI.escape(@unsubscribe_token) + '"'
 
     return unless @me.user.functional?
 
@@ -33,6 +37,8 @@ class NotificationMailer < ApplicationMailer
     @me      = recipient
     @account = notification.from_account
     @status  = notification.target_status
+    @unsubscribe_token = @me.user.user_token
+    @url_string = unsubscribe_url + '?token="' + CGI.escape(@unsubscribe_token) + '"'
 
     return unless @me.user.functional? && @status.present?
 
@@ -46,6 +52,9 @@ class NotificationMailer < ApplicationMailer
     @me      = recipient
     @account = notification.from_account
     @status  = notification.target_status
+
+    @unsubscribe_token = @me.user.user_token
+    @url_string = unsubscribe_url + '?token="' + CGI.escape(@unsubscribe_token) + '"'
 
     return unless @me.user.functional? && @status.present?
 
@@ -72,6 +81,8 @@ class NotificationMailer < ApplicationMailer
     @me                  = recipient
     @since               = opts[:since] || [@me.user.last_emailed_at, (@me.user.current_sign_in_at + 1.day)].compact.max
     @notifications_count = Notification.where(account: @me, activity_type: 'Mention').where('created_at > ?', @since).count
+    @unsubscribe_token = @me.user.user_token
+    @url_string = unsubscribe_url + '?token="' + CGI.escape(@unsubscribe_token) + '"'
 
     return if @notifications_count.zero?
 
@@ -81,6 +92,18 @@ class NotificationMailer < ApplicationMailer
     locale_for_account(@me) do
       mail to: @me.user.email,
            subject: I18n.t(:subject, scope: [:notification_mailer, :digest], count: @notifications_count)
+    end
+  end
+
+  def user_approved(recipient, _notification = nil)
+    @resource = recipient.user
+    @unsubscribe_token = @resource.user_token
+    @url_string = unsubscribe_url + '?token="' + CGI.escape(@unsubscribe_token) + '"'
+
+    return unless @resource.active_for_authentication?
+
+    I18n.with_locale(@resource.locale || I18n.default_locale) do
+      mail to: @resource.email, subject: I18n.t('notification_mailer.user_approved.web.subject')
     end
   end
 

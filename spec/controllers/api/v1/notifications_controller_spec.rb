@@ -56,7 +56,7 @@ RSpec.describe Api::V1::NotificationsController, type: :controller do
     before do
       first_status = PostStatusService.new.call(user.account, text: 'Test')
       @reblog_of_first_status = ReblogService.new.call(other.account, first_status)
-      mentioning_status = PostStatusService.new.call(other.account, text: 'Hello @alice')
+      mentioning_status = PostStatusService.new.call(other.account, text: 'Hello @alice', mentions: ['alice'])
       @mention_from_status = mentioning_status.mentions.first
       @favourite = FavouriteService.new.call(other.account, first_status)
       @second_favourite = FavouriteService.new.call(third.account, first_status)

@@ -10,7 +10,7 @@ class Api::V1::Admin::AccountsController < Api::BaseController
   before_action -> { doorkeeper_authorize! :'admin:write', :'admin:write:accounts' }, except: [:index, :show]
   before_action :require_staff!
   before_action :set_accounts, only: :index
-  before_action :set_account, except: :index
+  before_action :set_account, except: [:index, :create, :bulk_approve]
   before_action :require_local_account!, only: [:enable, :approve, :reject]
 
   after_action :insert_pagination_headers, only: :index
@@ -30,6 +30,7 @@ class Api::V1::Admin::AccountsController < Api::BaseController
     email
     ip
     staff
+    sms
   ).freeze
 
   PAGINATION_PARAMS = (%i(limit) + FILTER_PARAMS).freeze
@@ -44,6 +45,41 @@ class Api::V1::Admin::AccountsController < Api::BaseController
     render json: @account, serializer: REST::Admin::AccountSerializer
   end
 
+  def create
+    account = Account.new(username: params[:username])
+
+    user = User.new(
+      email: params[:email],
+      password: params[:password],
+      sms: params[:sms],
+      agreement: true,
+      admin: params[:role] == 'admin',
+      approved: ['true', true].include?(params[:approved]),
+      moderator: params[:role] == 'moderator',
+      confirmed_at: params[:confirmed] ? Time.now.utc : nil,
+      bypass_invite_request_check: true
+    )
+
+    user.account = account
+    account.verify! if ['true', true].include?(params[:verified])
+    user.set_waitlist_position unless params[:approved]
+
+    if user.save
+      send_registration_email(user)
+      export_prometheus_metric
+      render json: user.account, serializer: REST::Admin::AccountCreateSerializer
+    else
+      render json: { errors: user.errors.to_h }, status: 422
+    end
+  end
+
+  def role
+    authorize @account.user, :update?
+    @account.user.update(role: params[:role])
+    log_action :update_role, @account.user
+    render json: @account, serializer: REST::Admin::AccountSerializer
+  end
+
   def enable
     authorize @account.user, :enable?
     @account.user.enable!
@@ -55,6 +91,18 @@ class Api::V1::Admin::AccountsController < Api::BaseController
     authorize @account.user, :approve?
     @account.user.approve!
     render json: @account, serializer: REST::Admin::AccountSerializer
+  end
+
+  def bulk_approve
+    if bulk_approve_params[:number].present? || bulk_approve_params[:all].present?
+      opts = {}
+      opts[:number] = bulk_approve_params[:number].to_i if bulk_approve_params[:number].present?
+      opts[:all] = ActiveModel::Type::Boolean.new.cast(bulk_approve_params[:all]) if bulk_approve_params[:all].present?
+      Admin::AccountBulkApprovalWorker.perform_async(opts)
+      render json: {}, status: 204
+    else
+      render json: { error: 'You must include either a number or all param' }, status: 400
+    end
   end
 
   def reject
@@ -116,6 +164,10 @@ class Api::V1::Admin::AccountsController < Api::BaseController
     params.permit(*FILTER_PARAMS)
   end
 
+  def bulk_approve_params
+    params.permit(:number, :all)
+  end
+
   def insert_pagination_headers
     set_pagination_headers(next_path, prev_path)
   end
@@ -146,5 +198,17 @@ class Api::V1::Admin::AccountsController < Api::BaseController
 
   def require_local_account!
     forbidden unless @account.local? && @account.user.present?
+  end
+
+  def export_prometheus_metric
+    Prometheus::ApplicationExporter::increment(:registrations)
+  end
+
+  def send_registration_email(user)
+    if user.approved?
+      NotificationMailer.user_approved(user.account).deliver_later
+    else
+      UserMailer.waitlisted(user).deliver_later
+    end
   end
 end

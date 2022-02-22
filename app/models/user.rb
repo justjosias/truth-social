@@ -3,6 +3,7 @@
 #
 # Table name: users
 #
+#  id                        :bigint(8)        not null, primary key
 #  email                     :string           default(""), not null
 #  created_at                :datetime         not null
 #  updated_at                :datetime         not null
@@ -30,7 +31,6 @@
 #  otp_backup_codes          :string           is an Array
 #  filtered_languages        :string           default([]), not null, is an Array
 #  account_id                :bigint(8)        not null
-#  id                        :bigint(8)        not null, primary key
 #  disabled                  :boolean          default(FALSE), not null
 #  moderator                 :boolean          default(FALSE), not null
 #  invite_id                 :bigint(8)
@@ -42,6 +42,9 @@
 #  sign_in_token_sent_at     :datetime
 #  webauthn_id               :string
 #  sign_up_ip                :inet
+#  sms                       :string
+#  waitlist_position         :integer
+#  unsubscribe_from_emails   :boolean          default(FALSE)
 #
 
 class User < ApplicationRecord
@@ -107,12 +110,14 @@ class User < ApplicationRecord
   scope :inactive, -> { where(arel_table[:current_sign_in_at].lt(ACTIVE_DURATION.ago)) }
   scope :active, -> { confirmed.where(arel_table[:current_sign_in_at].gteq(ACTIVE_DURATION.ago)).joins(:account).where(accounts: { suspended_at: nil }) }
   scope :matches_email, ->(value) { where(arel_table[:email].matches("#{value}%")) }
+  scope :matches_sms, ->(value) { where(arel_table[:sms].matches("#{value}%")) }
   scope :matches_ip, ->(value) { left_joins(:session_activations).where('users.current_sign_in_ip <<= ?', value).or(left_joins(:session_activations).where('users.sign_up_ip <<= ?', value)).or(left_joins(:session_activations).where('users.last_sign_in_ip <<= ?', value)).or(left_joins(:session_activations).where('session_activations.ip <<= ?', value)) }
   scope :emailable, -> { confirmed.enabled.joins(:account).merge(Account.searchable) }
 
   before_validation :sanitize_languages
-  before_create :set_approved, :skip_confirmation_if_invited
+  before_create :skip_confirmation_if_invited
   after_commit :send_pending_devise_notifications
+  after_update_commit :send_approved_notification
 
   # This avoids a deprecation warning from Rails 5.1
   # It seems possible that a future release of devise-two-factor will
@@ -151,6 +156,10 @@ class User < ApplicationRecord
     update!(disabled: true)
   end
 
+  def enabled?
+    !disabled?
+  end
+
   def enable!
     update!(disabled: false)
   end
@@ -170,7 +179,6 @@ class User < ApplicationRecord
 
   def confirm!
     new_user      = !confirmed?
-    self.approved = true if open_registrations?
 
     skip_confirmation!
     save!
@@ -196,6 +204,22 @@ class User < ApplicationRecord
 
     save(validate: false) unless new_record?
     prepare_returning_user!
+  end
+
+  def user_token
+    EncryptAttrService.encrypt("#{id}+=#{updated_at}")
+  end
+
+  def self.get_user_from_token(user_token)
+    id, _updated_at_s = EncryptAttrService.decrypt(user_token).split("+=")
+
+    find_by(id: id)
+  end
+
+  def validate_user_token(user_token)
+    _id, updated_at_s = EncryptAttrService.decrypt(user_token).split("+=")
+
+    updated_at.to_s == updated_at_s
   end
 
   def pending?
@@ -251,24 +275,45 @@ class User < ApplicationRecord
     save!
   end
 
+  def set_waitlist_position
+    return 0 if approved?
+
+    most_recent_user = User.pending.order(waitlist_position: :desc).offset(1).first
+    position = most_recent_user&.waitlist_position || 0
+    self.waitlist_position = position + 1
+
+    save!
+    waitlist_position
+  end
+
+  def get_position_in_waitlist_queue
+    return 0 if approved?
+
+    first_user_in_waitlist = User.pending.order(waitlist_position: :asc).first
+    first_position = first_user_in_waitlist&.waitlist_position || 1
+    user_waitlist_position = waitlist_position || 0
+
+    user_waitlist_position - first_position + 1
+  end
+
   def setting_default_privacy
     settings.default_privacy || (account.locked? ? 'private' : 'public')
   end
 
   def allows_digest_emails?
-    settings.notification_emails['digest']
+    !unsubscribe_from_emails
   end
 
   def allows_report_emails?
-    settings.notification_emails['report']
+    !unsubscribe_from_emails
   end
 
   def allows_pending_account_emails?
-    settings.notification_emails['pending_account']
+    !unsubscribe_from_emails
   end
 
   def allows_trending_tag_emails?
-    settings.notification_emails['trending_tag']
+    !unsubscribe_from_emails
   end
 
   def hides_network?
@@ -330,6 +375,10 @@ class User < ApplicationRecord
     encrypted_password.blank? || valid_password?(compare_password)
   end
 
+  def send_confirmation_notification?
+    false
+  end
+
   def send_reset_password_instructions
     return false if encrypted_password.blank?
 
@@ -375,8 +424,6 @@ class User < ApplicationRecord
     self.sign_in_token_sent_at = Time.now.utc
   end
 
-  # TODO: @features if we allow users to set chosen
-  # language in the future we should remove this.
   def chosen_languages
     nil
   end
@@ -460,7 +507,7 @@ class User < ApplicationRecord
   def prepare_new_user!
     BootstrapTimelineWorker.perform_async(account_id)
     ActivityTracker.increment('activity:accounts:local')
-    UserMailer.welcome(self).deliver_later
+    NotificationMailer.user_approved(account).deliver_later
   end
 
   def prepare_returning_user!
@@ -489,5 +536,11 @@ class User < ApplicationRecord
 
   def invite_text_required?
     Setting.require_invite_text && !invited? && !external? && !bypass_invite_request_check?
+  end
+
+  def send_approved_notification
+    return unless saved_change_to_approved? && approved_previous_change == [false, true]
+
+    NotifyService.new.call(account, :user_approved, self)
   end
 end

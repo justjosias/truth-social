@@ -30,5 +30,9 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
       headers: :any,
       methods: [:post],
       credentials: false
+    resource '/oauth/mfa/challenge',
+      headers: :any,
+      methods: [:post],
+      credentials: false
   end
 end

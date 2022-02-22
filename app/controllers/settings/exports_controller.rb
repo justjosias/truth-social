@@ -4,6 +4,7 @@ class Settings::ExportsController < Settings::BaseController
   include Authorization
 
   skip_before_action :require_functional!
+  before_action :require_staff!
 
   def show
     @export  = Export.new(current_account)

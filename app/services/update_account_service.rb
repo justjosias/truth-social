@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require "./lib/proto/serializers/account_updated_event.rb"
 
 class UpdateAccountService < BaseService
   def call(account, params, raise_error: false)
@@ -12,6 +13,10 @@ class UpdateAccountService < BaseService
 
       authorize_all_follow_requests(account) if was_locked && !account.locked
       check_links(account)
+      Redis.current.publish(
+        AccountUpdatedEvent::EVENT_KEY,
+        AccountUpdatedEvent.new(account, fields_changed(account)).serialize
+      )
       process_hashtags(account)
     end
   rescue Mastodon::DimensionsValidationError, Mastodon::StreamValidationError => e
@@ -35,5 +40,14 @@ class UpdateAccountService < BaseService
 
   def process_hashtags(account)
     account.tags_as_strings = Extractor.extract_hashtags(account.note)
+  end
+
+  def fields_changed(account)
+    updatable_fields = %w(display_name avatar_url header_url website bio location)
+    changed_fields = account.saved_changes.keys
+    updated_fields = changed_fields.select { |f| updatable_fields.include?(f) }
+    updated_fields << "avatar_url" if changed_fields.include?("avatar_file_name")
+    updated_fields << "header_url" if changed_fields.include?("header_file_name")
+    updated_fields.map(&:upcase)
   end
 end

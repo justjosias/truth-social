@@ -55,6 +55,31 @@ class Export
     end
   end
 
+  def new_csv_export
+    csv_record = CsvExport.new(
+      model: 'Invites',
+      app_id: 'truthsocial',
+      file_url: '',
+      status: 'PROCESSING',
+      user_id: account.user.id
+    )
+    csv_record.save
+    csv_record
+  end
+
+  def invites_csv_record
+    CsvExport.where(
+      user_id: account.user.id,
+      model: 'Invites'
+    ).order(:created_at).last
+  end
+
+  def to_user_invites_csv
+    csv_export = new_csv_export
+    GenerateUserInvitesWorker.perform_async(account.user.id)
+    csv_export
+  end
+
   def total_storage
     account.media_attachments.sum(:file_file_size)
   end
@@ -65,6 +90,10 @@ class Export
 
   def total_bookmarks
     account.bookmarks.count
+  end
+
+  def total_user_invites
+    account.user.invites.count
   end
 
   def total_follows

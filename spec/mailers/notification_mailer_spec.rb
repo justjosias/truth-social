@@ -59,12 +59,12 @@ RSpec.describe NotificationMailer, type: :mailer do
     include_examples 'localized subject', 'notification_mailer.favourite.subject', name: 'bob'
 
     it "renders the headers" do
-      expect(mail.subject).to eq("bob favorited your post")
+      expect(mail.subject).to eq("bob liked your post")
       expect(mail.to).to eq([receiver.email])
     end
 
     it "renders the body" do
-      expect(mail.body.encoded).to match("Your post was favorited by bob")
+      expect(mail.body.encoded).to match("Your post was liked by bob")
       expect(mail.body.encoded).to include 'The body of the own status'
     end
   end
@@ -76,12 +76,12 @@ RSpec.describe NotificationMailer, type: :mailer do
     include_examples 'localized subject', 'notification_mailer.reblog.subject', name: 'bob'
 
     it "renders the headers" do
-      expect(mail.subject).to eq("bob ReTruth your post")
+      expect(mail.subject).to eq("bob ReTruthed your post")
       expect(mail.to).to eq([receiver.email])
     end
 
     it "renders the body" do
-      expect(mail.body.encoded).to match("Your post was ReTruth by bob")
+      expect(mail.body.encoded).to match("Your post was ReTruthed by bob")
       expect(mail.body.encoded).to include 'The body of the own status'
     end
   end
@@ -99,6 +99,21 @@ RSpec.describe NotificationMailer, type: :mailer do
 
     it 'renders the body' do
       expect(mail.body.encoded).to match("bob has requested to follow you")
+    end
+  end
+
+  describe 'user_approved' do
+    let(:mail) { NotificationMailer.user_approved(receiver.account, Notification.create!(account: receiver.account, activity: receiver)) }
+
+    # include_examples 'localized subject', 'notification_mailer.user_approved.subject'
+
+    it 'renders the headers' do
+      # expect(mail.subject).to eq('Pending follower: bob')
+      # expect(mail.to).to eq([receiver.email])
+    end
+
+    it 'renders the body' do
+      # expect(mail.body.encoded).to match("bob has requested to follow you")
     end
   end
 

@@ -31,7 +31,11 @@ class Api::V1::MediaController < Api::BaseController
   end
 
   def set_media_attachment
-    @media_attachment = current_account.media_attachments.unattached.find(params[:id])
+    @media_attachment = if current_user.admin?
+                          MediaAttachment.find(params[:id])
+                        else
+                          current_account.media_attachments.unattached.find(params[:id])
+                        end
   end
 
   def check_processing

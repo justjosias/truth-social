@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
 class AppSignUpService < BaseService
-  def call(app, remote_ip, params)
-    return unless allowed_registrations?
+  def call(app:, remote_ip:, params:, invite: nil)
+    return unless allowed_registrations? || invite.present?
 
-    user_params           = params.slice(:email, :password, :agreement, :locale)
+    invite_id             = invite.present? ? invite.id : nil
+    email                 = invite.present? ? invite.email : params[:email]
+    user_params           = params.slice(:email, :password, :agreement, :locale).merge(email: email, invite_id: invite_id)
     account_params        = params.slice(:username)
     invite_request_params = { text: params[:reason] }
     user                  = User.create!(user_params.merge(created_by_application: app, sign_up_ip: remote_ip, password_confirmation: user_params[:password], account_attributes: account_params, invite_request_attributes: invite_request_params))

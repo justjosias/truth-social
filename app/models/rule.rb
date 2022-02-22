@@ -10,11 +10,15 @@
 #  text       :text             default(""), not null
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
+#  rule_type  :integer          default("content")
+#  subtext    :text             default(""), not null
 #
 class Rule < ApplicationRecord
   include Discard::Model
 
   self.discard_column = :deleted_at
+
+  enum rule_type: { content: 0, account: 1 }
 
   validates :text, presence: true, length: { maximum: 300 }
 

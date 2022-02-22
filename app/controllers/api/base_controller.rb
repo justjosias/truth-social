@@ -75,6 +75,10 @@ class Api::BaseController < ApplicationController
     [params[:limit].to_i.abs, default_limit * 2].min
   end
 
+  def order_param(params)
+    params[:order].presence || 'asc'
+  end
+
   def params_slice(*keys)
     params.slice(*keys).permit(*keys)
   end
@@ -93,14 +97,14 @@ class Api::BaseController < ApplicationController
     render json: { error: 'This method requires an authenticated user' }, status: 401 unless current_user
   end
 
-  def require_user!
+  def require_user!(requires_approval: true)
     if !current_user
       render json: { error: 'This method requires an authenticated user' }, status: 422
     elsif !current_user.confirmed?
       render json: { error: 'Your login is missing a confirmed e-mail address' }, status: 403
-    elsif !current_user.approved?
+    elsif requires_approval && !current_user.approved?
       render json: { error: 'Your login is currently pending approval' }, status: 403
-    elsif !current_user.functional?
+    elsif requires_approval && !current_user.functional?
       render json: { error: 'Your login is currently disabled' }, status: 403
     else
       update_user_sign_in

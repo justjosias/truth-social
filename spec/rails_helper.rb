@@ -50,6 +50,10 @@ RSpec.configure do |config|
     Capybara.app_host = "http#{https ? 's' : ''}://#{ENV.fetch('LOCAL_DOMAIN')}"
   end
 
+  config.before :each do
+    stub_font_request
+  end
+
   config.before :each, type: :controller do
     stub_jsonld_contexts!
   end
@@ -84,4 +88,15 @@ def stub_jsonld_contexts!
   stub_request(:get, 'https://www.w3.org/ns/activitystreams').to_return(request_fixture('json-ld.activitystreams.txt'))
   stub_request(:get, 'https://w3id.org/identity/v1').to_return(request_fixture('json-ld.identity.txt'))
   stub_request(:get, 'https://w3id.org/security/v1').to_return(request_fixture('json-ld.security.txt'))
+end
+
+def stub_font_request
+  stub_request(:get, "https://fonts.googleapis.com/css2?display=swap&family=Poppins").
+    with(
+      headers: {
+        Connection: 'close',
+        Host: 'fonts.googleapis.com',
+        'User-Agent' => 'http.rb/4.4.1'
+      }
+    ).to_return(status: 200, body: '', headers: {})
 end

@@ -2,7 +2,7 @@
 en:
   about:
     about_hashtag_html: These are public posts tagged with <strong>#%{hashtag}</strong>. You can interact with them if you have an account anywhere in the fediverse.
-    about_mastodon_html: 'The social network of the future: No ads, no corporate surveillance, ethical design, and decentralization! Own your data with Truth!'
+    about_mastodon_html: "Truth Social is America's 'Big Tent' social media platform that encourages an open, free, and honest global conversation without discriminating against political ideology."
     about_this: About
     active_count_after: active
     active_footnote: Monthly Active Users (MAU)
@@ -106,6 +106,8 @@ en:
       are_you_sure: Are you sure?
       avatar: Avatar
       by_domain: Domain
+      bot: Mark user as bot
+      unbot: Mark user as not a bot
       change_email:
         changed_msg: Account email successfully changed!
         current_email: Current email
@@ -218,6 +220,8 @@ en:
       unsubscribe: Unsubscribe
       unsuspended_msg: Successfully unsuspended %{username}'s account
       unverified_msg: Account %{username} has been unverified
+      bot_msg: Account %{username} has been marked as a bot
+      unbot_msg: Account %{username} has been marked as not a bot
       username: Username
       view_domain: View summary for domain
       warn: Warn
@@ -1077,8 +1081,8 @@ en:
         other: "%{count} new notifications since your last visit \U0001F418"
       title: In your absence...
     favourite:
-      body: 'Your post was favorited by %{name}:'
-      subject: "%{name} favorited your post"
+      body: 'Your post was liked by %{name}:'
+      subject: "%{name} liked your post"
       title: New favorite
     follow:
       body: "%{name} is now following you!"
@@ -1097,11 +1101,31 @@ en:
     poll:
       subject: A poll by %{name} has ended
     reblog:
-      body: 'Your post was ReTruth by %{name}:'
-      subject: "%{name} ReTruth your post"
+      body: 'Your post was ReTruthed by %{name}:'
+      subject: "%{name} ReTruthed your post"
       title: New ReTruth
     status:
       subject: "%{name} just posted"
+    user_approved:
+      edit_profile_action: Go to profile
+      edit_profile_step: Lastly, make sure to customize your profile by uploading an avatar, header, changing your display name and more. If you’d like to review new followers before they’re allowed to follow you, you can lock your account.
+      explanation: We are very excited to welcome you to our Truth Seeking community. We believe in free expression and encourage all viewpoints as we do not discriminate against political ideology.
+      extra_step: Also, a friendly reminder, we are a new platform, and we are still fixing many bugs in our technology. We promise we are working as hard as we can to make things better as fast as possible! Thanks!
+      final_action: Start posting
+      final_step: 'Start posting! Even without followers your public posts may be seen by others, for example on the local timeline and in hashtags. You may want to introduce yourself on the #introductions hashtag.'
+      full_handle: Your full handle
+      full_handle_hint: This is what you would tell your friends so they can message or follow you from another server.
+      review_preferences_action: Change preferences
+      review_preferences_step: Make sure to set your preferences, such as which emails you'd like to receive, or what privacy level you’d like your posts to default to. If you don’t have motion sickness, you could choose to enable GIF autoplay.
+      subject: "Your wait is over! Tap here to start using Truth Social."
+      web:
+        subject: "Welcome to Truth"
+      tip_federated_timeline: The federated timeline is a firehose view of the Truth network. But it only includes people your neighbours are subscribed to, so it's not complete.
+      tip_following: You follow your server's admin(s) by default. To find more interesting people, check the local and federated timelines.
+      tip_local_timeline: The local timeline is a firehose view of people on %{instance}. These are your immediate neighbours!
+      tip_mobile_webapp: If your mobile browser offers you to add Truth to your homescreen, you can receive push notifications. It acts like a native app in many ways!
+      tips: Tips
+      title: Welcome to Truth Social, %{name}!
   notifications:
     email_events: Events for e-mail notifications
     email_events_hint: 'Select events that you want to receive notifications for:'
@@ -1124,7 +1148,7 @@ en:
     instructions_html: "<strong>Scan this QR code into Google Authenticator or a similar TOTP app on your phone</strong>. From now on, that app will generate tokens that you will have to enter when logging in."
     manual_instructions: 'If you can''t scan the QR code and need to enter it manually, here is the plain-text secret:'
     setup: Set up
-    wrong_code: The entered code was invalid! Are server time and device time correct?
+    wrong_code: The entered code was invalid!
   pagination:
     newer: Newer
     next: Next
@@ -1302,7 +1326,7 @@ en:
       unlisted_long: Everyone can see, but not listed on public timelines
   stream_entries:
     pinned: Pinned post
-    reblogged: ReTruth
+    reblogged: ReTruthed
     sensitive_content: Sensitive content
   tags:
     does_not_match_previous_name: does not match the previous name
@@ -1414,7 +1438,7 @@ en:
     webauthn: Security keys
   user_mailer:
     backup_ready:
-      explanation: You requested a full backup of your Truth account. It's now ready for download!
+      explanation: You requested a full backup of your Truth Social account. It's now ready for download!
       subject: Your archive is ready for download
       title: Archive takeout
     sign_in_token:
@@ -1423,18 +1447,24 @@ en:
       further_actions: 'If this wasn''t you, please change your password and enable two-factor authentication on your account. You can do so here:'
       subject: Please confirm attempted sign in
       title: Sign in attempt
+    status_removed:
+      explanation: You have a status that has been removed for violating Truth social community guidelines.
+      title: Your status has been removed
+      subject: Your status has been removed
     warning:
       explanation:
-        disable: You can no longer login to your account or use it in any other way, but your profile and other data remains intact.
-        sensitive: Your uploaded media files and linked media will be treated as sensitive.
-        silence: You can still use your account but only people who are already following you will see your posts on this server, and you may be excluded from various public listings. However, others may still manually follow you.
-        suspend: You can no longer use your account, and your profile and other data are no longer accessible. You can still login to request a backup of your data until the data is fully removed, but we will retain some data to prevent you from evading the suspension.
-        verify: You're a certified member of the commumity
-        unverify: You're no longer a certified member of the community
-      get_in_touch: You can reply to this e-mail to get in touch with the staff of %{instance}.
-      review_server_policies: Review server policies
+        ban_html: After careful review we have decided to delete your account permanently due to Truth social community guidelines violations. If you feel we have made an error, you can file an appeal with %{email}.
+        disable_html: You can no longer login to your account or use it in any other way, but your profile and other data remains intact.
+        sensitive_html: Your uploaded media files and linked media will be treated as sensitive.
+        silence_html: You can still use your account but only people who are already following you will see your posts on this server, and you may be excluded from various public listings. However, others may still manually follow you.
+        suspend_html: Your account is suspended and will be inaccessible for %{suspension_duration}.
+        verify_html: You're a certified member of the commumity
+        unverify_html: You're no longer a certified member of the community
+      get_in_touch: You can reply to this e-mail to get in touch with Truth Social.
+      review_server_policies: Review community guidelines
       statuses: 'Specifically, for:'
       subject:
+        ban: Your account %{acct} has been banned
         disable: Your account %{acct} has been frozen
         none: Warning for %{acct}
         sensitive: Your account %{acct} posting media has been marked as sensitive
@@ -1443,6 +1473,7 @@ en:
         verify: Your account %{acct} has been verified
         unverify: Your account %{acct} verification was removed
       title:
+        ban: Account Banned
         disable: Account frozen
         none: Warning
         sensitive: Your media has been marked as sensitive
@@ -1450,23 +1481,10 @@ en:
         suspend: Account suspended
         verify: Account verified
         unverify: Account verification removed
-    welcome:
-      edit_profile_action: Setup profile
-      edit_profile_step: You can customize your profile by uploading an avatar, header, changing your display name and more. If you’d like to review new followers before they’re allowed to follow you, you can lock your account.
-      explanation: Here are some tips to get you started
-      final_action: Start posting
-      final_step: 'Start posting! Even without followers your public posts may be seen by others, for example on the local timeline and in hashtags. You may want to introduce yourself on the #introductions hashtag.'
-      full_handle: Your full handle
-      full_handle_hint: This is what you would tell your friends so they can message or follow you from another server.
-      review_preferences_action: Change preferences
-      review_preferences_step: Make sure to set your preferences, such as which emails you'd like to receive, or what privacy level you’d like your posts to default to. If you don’t have motion sickness, you could choose to enable GIF autoplay.
-      subject: Welcome to Truth
-      tip_federated_timeline: The federated timeline is a firehose view of the Truth network. But it only includes people your neighbours are subscribed to, so it's not complete.
-      tip_following: You follow your server's admin(s) by default. To find more interesting people, check the local and federated timelines.
-      tip_local_timeline: The local timeline is a firehose view of people on %{instance}. These are your immediate neighbours!
-      tip_mobile_webapp: If your mobile browser offers you to add Truth to your homescreen, you can receive push notifications. It acts like a native app in many ways!
-      tips: Tips
-      title: Welcome to TRUTH Social, %{name}!
+    waitlisted:
+      title: "Your account has been created successfully!"
+      explanation: "Thanks for joining! Due to high demand, we have placed you on our waitlist. We love you, and you are not just another number to us! But your waitlist number is above 🙂"
+      extra_explanation: "We will email you when your account is ready. If you enable push notifications in the Truth Social mobile app, we'll also notify you via a push notification."
   users:
     follow_limit_reached: You cannot follow more than %{limit} people
     generic_access_help_html: Trouble accessing your account? You may get in touch with %{email} for assistance

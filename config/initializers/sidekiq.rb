@@ -1,11 +1,16 @@
 # frozen_string_literal: true
 
 Sidekiq.configure_server do |config|
+  #require 'prometheus_exporter/instrumentation'
+
   config.redis = REDIS_SIDEKIQ_PARAMS
 
   config.server_middleware do |chain|
     chain.add SidekiqErrorHandler
+    #chain.add PrometheusExporter::Instrumentation::Sidekiq
   end
+
+  #config.death_handlers << PrometheusExporter::Instrumentation::Sidekiq.death_handler
 
   config.server_middleware do |chain|
     chain.add SidekiqUniqueJobs::Middleware::Server
@@ -13,6 +18,13 @@ Sidekiq.configure_server do |config|
 
   config.client_middleware do |chain|
     chain.add SidekiqUniqueJobs::Middleware::Client
+  end
+
+  config.on :startup do
+    #PrometheusExporter::Instrumentation::Process.start type: 'sidekiq'
+    #PrometheusExporter::Instrumentation::SidekiqProcess.start
+    #PrometheusExporter::Instrumentation::SidekiqQueue.start
+    #PrometheusExporter::Instrumentation::SidekiqStats.start
   end
 
   SidekiqUniqueJobs::Server.configure(config)

@@ -31,15 +31,12 @@ shared_examples 'ScopedSettings' do
   end
 
   describe 'missing methods' do
-    # expecting [] and []= works.
-
     it 'reads settings' do
       expect(Setting.boost_modal).to eq false
       settings = create!
       expect(settings.boost_modal).to eq false
     end
 
-    # TODO: @features
     it 'updates settings, boost_modal cannot be updated' do
       settings = fabricate
       settings.boost_modal = true
@@ -47,7 +44,6 @@ shared_examples 'ScopedSettings' do
     end
   end
 
-  # TODO: @features
   it 'can update settings with [] and can read with []= boost_modal cannot be user configured' do
     settings = fabricate
 

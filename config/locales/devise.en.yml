@@ -27,23 +27,23 @@ en:
         title: Verify email address
       email_changed:
         explanation: 'The email address for your account is being changed to:'
-        extra: If you did not change your email, it is likely that someone has gained access to your account. Please change your password immediately or contact the server admin if you're locked out of your account.
+        extra: If you did not change your email, it is likely that someone has gained access to your account. Please change your password immediately or contact us if you're locked out of your account.
         subject: 'Truth: Email changed'
         title: New email address
       password_change:
         explanation: The password for your account has been changed.
-        extra: If you did not change your password, it is likely that someone has gained access to your account. Please change your password immediately or contact the server admin if you're locked out of your account.
+        extra: If you did not change your password, it is likely that someone has gained access to your account. Please change your password immediately or contact us if you're locked out of your account.
         subject: 'Truth: Password changed'
         title: Password changed
       reconfirmation_instructions:
         explanation: Confirm the new address to change your email.
-        extra: If this change wasn't initiated by you, please ignore this email. The email address for the Truth account won't change until you access the link above.
+        extra: If this change wasn't initiated by you, please ignore this email. The email address for your Truth Social account won't change until you access the link above.
         subject: 'Truth: Confirm email for %{instance}'
         title: Verify email address
       reset_password_instructions:
         action: Change password
         explanation: You requested a new password for your account.
-        extra: If you didn't request this, please ignore this email. Your password won't change until you access the link above and create a new one.
+        extra: If you didn't request this, please ignore this email. Your password won't change until you access the link below and create a new one.
         subject: 'Truth: Reset password instructions'
         title: Password reset
       two_factor_disabled:

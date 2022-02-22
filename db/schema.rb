@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_10_22_212136) do
+ActiveRecord::Schema.define(version: 2022_02_19_181316) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -292,6 +292,17 @@ ActiveRecord::Schema.define(version: 2021_10_22_212136) do
     t.index ["uri"], name: "index_conversations_on_uri", unique: true
   end
 
+  create_table "csv_exports", force: :cascade do |t|
+    t.string "model", null: false
+    t.string "app_id", null: false
+    t.string "file_url", null: false
+    t.string "status", default: "PROCESSING"
+    t.bigint "user_id", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["user_id"], name: "index_csv_exports_on_user_id"
+  end
+
   create_table "custom_emoji_categories", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -541,6 +552,7 @@ ActiveRecord::Schema.define(version: 2021_10_22_212136) do
     t.integer "thumbnail_file_size"
     t.datetime "thumbnail_updated_at"
     t.string "thumbnail_remote_url"
+    t.string "external_video_id"
     t.index ["account_id", "status_id"], name: "index_media_attachments_on_account_id_and_status_id", order: { status_id: :desc }
     t.index ["scheduled_status_id"], name: "index_media_attachments_on_scheduled_status_id"
     t.index ["shortcode"], name: "index_media_attachments_on_shortcode", unique: true
@@ -744,6 +756,7 @@ ActiveRecord::Schema.define(version: 2021_10_22_212136) do
     t.bigint "assigned_account_id"
     t.string "uri"
     t.boolean "forwarded"
+    t.integer "rule_ids", default: [], null: false, array: true
     t.index ["account_id"], name: "index_reports_on_account_id"
     t.index ["target_account_id"], name: "index_reports_on_target_account_id"
   end
@@ -754,6 +767,8 @@ ActiveRecord::Schema.define(version: 2021_10_22_212136) do
     t.text "text", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "rule_type", default: 0
+    t.text "subtext", default: "", null: false
   end
 
   create_table "scheduled_statuses", force: :cascade do |t|
@@ -838,6 +853,7 @@ ActiveRecord::Schema.define(version: 2021_10_22_212136) do
     t.bigint "in_reply_to_account_id"
     t.bigint "poll_id"
     t.datetime "deleted_at"
+    t.bigint "deleted_by_id"
     t.index ["account_id", "id", "visibility", "updated_at"], name: "index_statuses_20190820", order: { id: :desc }, where: "(deleted_at IS NULL)"
     t.index ["id", "account_id"], name: "index_statuses_local_20190824", order: { id: :desc }, where: "((local OR (uri IS NULL)) AND (deleted_at IS NULL) AND (visibility = 0) AND (reblog_of_id IS NULL) AND ((NOT reply) OR (in_reply_to_account_id = account_id)))"
     t.index ["id", "account_id"], name: "index_statuses_public_20200119", order: { id: :desc }, where: "((deleted_at IS NULL) AND (visibility = 0) AND (reblog_of_id IS NULL) AND ((NOT reply) OR (in_reply_to_account_id = account_id)))"
@@ -948,23 +964,31 @@ ActiveRecord::Schema.define(version: 2021_10_22_212136) do
     t.datetime "sign_in_token_sent_at"
     t.string "webauthn_id"
     t.inet "sign_up_ip"
+    t.string "sms"
+    t.integer "waitlist_position"
+    t.boolean "unsubscribe_from_emails", default: false
     t.index ["account_id"], name: "index_users_on_account_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["created_by_application_id"], name: "index_users_on_created_by_application_id"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["remember_token"], name: "index_users_on_remember_token", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["sms"], name: "index_users_on_sms"
+    t.index ["waitlist_position"], name: "index_users_on_waitlist_position"
   end
 
   create_table "web_push_subscriptions", force: :cascade do |t|
-    t.string "endpoint", null: false
-    t.string "key_p256dh", null: false
-    t.string "key_auth", null: false
+    t.string "endpoint"
+    t.string "key_p256dh"
+    t.string "key_auth"
     t.json "data"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "access_token_id"
     t.bigint "user_id"
+    t.string "device_token"
+    t.integer "platform", default: 0
+    t.integer "environment", default: 0
     t.index ["access_token_id"], name: "index_web_push_subscriptions_on_access_token_id"
     t.index ["user_id"], name: "index_web_push_subscriptions_on_user_id"
   end

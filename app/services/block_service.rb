@@ -14,6 +14,7 @@ class BlockService < BaseService
 
     BlockWorker.perform_async(account.id, target_account.id)
     create_notification(block) if !target_account.local? && target_account.activitypub?
+    export_prometheus_metric
     block
   end
 
@@ -25,5 +26,9 @@ class BlockService < BaseService
 
   def build_json(block)
     Oj.dump(serialize_payload(block, ActivityPub::BlockSerializer))
+  end
+
+  def export_prometheus_metric
+    Prometheus::ApplicationExporter::increment(:blocks)
   end
 end

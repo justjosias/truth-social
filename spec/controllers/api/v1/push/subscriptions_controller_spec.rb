@@ -6,7 +6,9 @@ describe Api::V1::Push::SubscriptionsController do
   render_views
 
   let(:user)  { Fabricate(:user) }
+  let(:second_user)  { Fabricate(:user) }
   let(:token) { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: 'push') }
+  let(:second_token) { Fabricate(:accessible_access_token, resource_owner_id: second_user.id, scopes: 'push') }
 
   before do
     allow(controller).to receive(:doorkeeper_token) { token }
@@ -20,6 +22,16 @@ describe Api::V1::Push::SubscriptionsController do
           p256dh: 'BEm_a0bdPDhf0SOsrnB2-ategf1hHoCnpXgQsFj5JCkcoMrMt2WHoPfEYOYPzOIs9mZE8ZUaD7VA5vouy0kEkr8=',
           auth: 'eH_C8rq2raXqlcBVDa1gLg==',
         },
+      }
+    }.with_indifferent_access
+  end
+
+  let(:create_mobile_payload) do
+    {
+      subscription: {
+        device_token: 'SgQsFj5JCkcoMrMt2WHoPTSTCkQCkQ/STCkSTCkQQSTCkQSTgQsFj5JCkcoMrMt2WHoPCkQSTSTCkQCkQ=',
+        platform: 1,
+        environment: 1
       }
     }.with_indifferent_access
   end
@@ -43,23 +55,69 @@ describe Api::V1::Push::SubscriptionsController do
   end
 
   describe 'POST #create' do
-    before do
-      post :create, params: create_payload
+    context 'with web notifications' do
+      before do
+        post :create, params: create_payload
+      end
+
+      it 'saves push subscriptions' do
+        push_subscription = Web::PushSubscription.find_by(endpoint: create_payload[:subscription][:endpoint])
+
+        expect(push_subscription.endpoint).to eq(create_payload[:subscription][:endpoint])
+        expect(push_subscription.key_p256dh).to eq(create_payload[:subscription][:keys][:p256dh])
+        expect(push_subscription.key_auth).to eq(create_payload[:subscription][:keys][:auth])
+        expect(push_subscription.user_id).to eq user.id
+        expect(push_subscription.access_token_id).to eq token.id
+      end
+
+      it 'replaces old subscription on repeat calls' do
+        post :create, params: create_payload
+        expect(Web::PushSubscription.where(endpoint: create_payload[:subscription][:endpoint]).count).to eq 1
+      end
     end
 
-    it 'saves push subscriptions' do
-      push_subscription = Web::PushSubscription.find_by(endpoint: create_payload[:subscription][:endpoint])
+    context 'with mobile notifications' do
+      before do
+        post :create, params: create_mobile_payload
+      end
 
-      expect(push_subscription.endpoint).to eq(create_payload[:subscription][:endpoint])
-      expect(push_subscription.key_p256dh).to eq(create_payload[:subscription][:keys][:p256dh])
-      expect(push_subscription.key_auth).to eq(create_payload[:subscription][:keys][:auth])
-      expect(push_subscription.user_id).to eq user.id
-      expect(push_subscription.access_token_id).to eq token.id
+      it 'saves push subscriptions for mobile' do
+        push_subscription = Web::PushSubscription.find_by(endpoint: create_mobile_payload[:subscription][:endpoint])
+
+        expect(push_subscription.device_token).to eq(create_mobile_payload[:subscription][:device_token])
+        expect(push_subscription.platform).to eq(create_mobile_payload[:subscription][:platform])
+        expect(push_subscription.environment).to eq(create_mobile_payload[:subscription][:environment])
+        expect(push_subscription.user_id).to eq user.id
+        expect(push_subscription.access_token_id).to eq token.id
+      end
+
+      it 'removes subscriptions with the same device_id' do
+        allow(controller).to receive(:doorkeeper_token) { second_token }
+        post :create, params: create_mobile_payload
+        expect(Web::PushSubscription.where(platform: create_mobile_payload[:subscription][:platform]).count).to eq 1
+      end
     end
 
-    it 'replaces old subscription on repeat calls' do
-      post :create, params: create_payload
-      expect(Web::PushSubscription.where(endpoint: create_payload[:subscription][:endpoint]).count).to eq 1
+    context 'with an unapproved user' do
+      let(:unapproved_user) { Fabricate(:user, approved: false) }
+      let(:unapproved_user_token) {
+        Fabricate(:accessible_access_token, resource_owner_id: unapproved_user.id, scopes: 'push')
+      }
+
+      before do
+        allow(controller).to receive(:doorkeeper_token) { unapproved_user_token }
+        post :create, params: create_mobile_payload
+      end
+
+      it 'saves push subscriptions for mobile' do
+        push_subscription = Web::PushSubscription.find_by(endpoint: create_mobile_payload[:subscription][:endpoint])
+
+        expect(push_subscription.device_token).to eq(create_mobile_payload[:subscription][:device_token])
+        expect(push_subscription.platform).to eq(create_mobile_payload[:subscription][:platform])
+        expect(push_subscription.environment).to eq(create_mobile_payload[:subscription][:environment])
+        expect(push_subscription.user_id).to eq unapproved_user.id
+        expect(push_subscription.access_token_id).to eq unapproved_user_token.id
+      end
     end
   end
 

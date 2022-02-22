@@ -127,6 +127,48 @@ RSpec.describe Admin::AccountsController, type: :controller do
     end
   end
 
+  describe 'POST #bot' do
+    subject { post :bot, params: { id: account.id } }
+
+    let(:current_user) { Fabricate(:user, admin: current_user_admin) }
+    let(:account) { Fabricate(:account, user: user) }
+    let(:user) { Fabricate(:user, admin: target_user_admin) }
+
+    context 'when user is admin' do
+      let(:current_user_admin) { true }
+
+      context 'when target user is not admin' do
+        let(:target_user_admin) { false }
+
+        it 'succeeds in making the account a bot' do
+          is_expected.to redirect_to admin_account_path(account.id)
+          expect(account.reload.bot?).to eq true
+        end
+      end
+    end
+  end
+
+  describe 'POST #unbot' do
+    subject { post :unbot, params: { id: account.id } }
+
+    let(:current_user) { Fabricate(:user, admin: current_user_admin) }
+    let(:account) { Fabricate(:account, user: user, actor_type: 'Service') }
+    let(:user) { Fabricate(:user, admin: target_user_admin) }
+
+    context 'when user is admin' do
+      let(:current_user_admin) { true }
+
+      context 'when target user is not admin' do
+        let(:target_user_admin) { false }
+
+        it 'succeeds in making the account not a bot' do
+          is_expected.to redirect_to admin_account_path(account.id)
+          expect(account.reload.bot?).to eq false
+        end
+      end
+    end
+  end
+
   describe 'POST #enable' do
     subject { post :enable, params: { id: account.id } }
 

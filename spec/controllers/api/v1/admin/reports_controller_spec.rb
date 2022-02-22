@@ -7,7 +7,8 @@ RSpec.describe Api::V1::Admin::ReportsController, type: :controller do
   let(:user)   { Fabricate(:user, role: role, account: Fabricate(:account, username: 'alice')) }
   let(:scopes) { 'admin:read admin:write' }
   let(:token)  { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: scopes) }
-  let(:report) { Fabricate(:report) }
+  let(:rule)   { Fabricate(:rule) }
+  let(:report) { Fabricate(:report, rule_ids: [rule.id]) }
 
   before do
     allow(controller).to receive(:doorkeeper_token) { token }
@@ -51,6 +52,7 @@ RSpec.describe Api::V1::Admin::ReportsController, type: :controller do
     it_behaves_like 'forbidden for wrong role', 'user'
 
     it 'returns http success' do
+      expect(body_as_json[:rules][0][:id]).to eq(rule.id.to_s)
       expect(response).to have_http_status(200)
     end
   end

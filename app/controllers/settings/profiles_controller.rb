@@ -3,15 +3,14 @@
 class Settings::ProfilesController < Settings::BaseController
   before_action :set_account, :set_features
 
-  # TODO: profile feature toggle
   SHOWN_FEATURES = {
-    'locked' => false, # overridden in the model, safe to hide
-    'bot_account' => false, # actor_type defaults to null, safe to hide
-    'metadata' => false, # must be set by a user so we can safely hide this.
-    'verification' => false, # must be set by the user, safe to hide
-    'move_to' => false, # safe to hide
-    'move_from' => false, # safe to hide
-    'delete' => false, # safe to hide
+    'locked' => false,
+    'bot_account' => false,
+    'metadata' => false,
+    'verification' => false,
+    'move_to' => false,
+    'move_from' => false,
+    'delete' => false,
   }
 
   def show

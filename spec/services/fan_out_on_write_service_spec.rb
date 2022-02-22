@@ -12,7 +12,7 @@ RSpec.describe FanOutOnWriteService, type: :service do
     alice
     follower.follow!(author)
 
-    ProcessMentionsService.new.call(status)
+    ProcessMentionsService.new.call(status, [])
     ProcessHashtagsService.new.call(status)
 
     subject.call(status)

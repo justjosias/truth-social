@@ -3,3 +3,7 @@
 <%= raw t('notification_mailer.mention.body', name: @status.account.acct) %>
 
 <%= render 'status', status: @status %>
+
+If you no longer wish to receive transactional emails go here: 
+
+<%= @url_string %>

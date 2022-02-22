@@ -101,7 +101,7 @@ describe Settings::TwoFactorAuthentication::ConfirmationsController do
 
           it 'renders the new view' do
             subject
-            expect(response.body).to include 'The entered code was invalid! Are server time and device time correct?'
+            expect(response.body).to include 'The entered code was invalid!'
           end
 
           include_examples 'renders :new'

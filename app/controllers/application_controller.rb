@@ -37,6 +37,10 @@ class ApplicationController < ActionController::Base
     raise ActionController::RoutingError, "No route matches #{params[:unmatched_route]}"
   end
 
+  def current_user_id
+    return current_user&.id
+  end
+
   private
 
   def authorized_fetch_mode?
@@ -60,7 +64,13 @@ class ApplicationController < ActionController::Base
   end
 
   def require_functional!
-    redirect_to edit_user_registration_path unless current_user.functional?
+    if !current_user.approved?
+      render json: { error: 'Your login is currently pending approval' }, status: 403
+    elsif !current_user.confirmed?
+      redirect_to edit_user_registration_path
+    elsif !current_user.functional?
+      forbidden
+    end
   end
 
   def after_sign_out_path_for(_resource_or_scope)

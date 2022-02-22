@@ -27,13 +27,7 @@ class AccountSearchService < BaseService
 
     return @exact_match if defined?(@exact_match)
 
-    match = if options[:resolve]
-              ResolveAccountService.new.call(query)
-            elsif domain_is_local?
-              Account.find_local(query_username)
-            else
-              Account.find_remote(query_username, query_domain)
-            end
+    match = Account.find_local(query)
 
     match = nil if !match.nil? && !account.nil? && options[:following] && !account.following?(match)
 
@@ -52,22 +46,30 @@ class AccountSearchService < BaseService
 
   def from_database
     if account
-      advanced_search_results
+      if options[:followers]
+        follower_search
+      else
+        advanced_search_results
+      end
     else
       simple_search_results
     end
   end
 
   def advanced_search_results
-    Account.advanced_search_for(terms_for_query, account, limit_for_non_exact_results, options[:following], offset)
+    Account.advanced_search_for(query, account, limit_for_non_exact_results, options[:following], offset)
+  end
+
+  def follower_search
+    account.followers.where("LOWER(username) LIKE ?", "%" + query.downcase + "%").limit(20)
   end
 
   def simple_search_results
-    Account.search_for(terms_for_query, limit_for_non_exact_results, offset)
+    Account.search_for(query, limit_for_non_exact_results, offset)
   end
 
   def from_elasticsearch
-    must_clauses   = [{ multi_match: { query: terms_for_query, fields: likely_acct? ? %w(acct.edge_ngram acct) : %w(acct.edge_ngram acct display_name.edge_ngram display_name), type: 'most_fields', operator: 'and' } }]
+    must_clauses   = [{ multi_match: { query: query, fields: likely_acct? ? %w(acct.edge_ngram acct) : %w(acct.edge_ngram acct display_name.edge_ngram display_name), type: 'most_fields', operator: 'and' } }]
     should_clauses = []
 
     if account
@@ -77,6 +79,9 @@ class AccountSearchService < BaseService
         must_clauses << { terms: { id: following_ids } }
       elsif following_ids.any?
         should_clauses << { terms: { id: following_ids, boost: 100 } }
+      end
+      if options[:followers]
+        must_clauses << { terms: { id: follower_ids } }
       end
     end
 
@@ -132,40 +137,16 @@ class AccountSearchService < BaseService
     @following_ids ||= account.active_relationships.pluck(:target_account_id) + [account.id]
   end
 
+  def follower_ids
+    @follower_ids ||= account.passive_relationships.pluck(:account_id)
+  end
+
   def limit_for_non_exact_results
     if exact_match?
       limit - 1
     else
       limit
     end
-  end
-
-  def terms_for_query
-    if domain_is_local?
-      query_username
-    else
-      query
-    end
-  end
-
-  def split_query_string
-    @split_query_string ||= query.split('@')
-  end
-
-  def query_username
-    @query_username ||= split_query_string.first || ''
-  end
-
-  def query_domain
-    @query_domain ||= query_without_split? ? nil : split_query_string.last
-  end
-
-  def query_without_split?
-    split_query_string.size == 1
-  end
-
-  def domain_is_local?
-    @domain_is_local ||= TagManager.instance.local_domain?(query_domain)
   end
 
   def exact_match?

@@ -1,7 +1,9 @@
 require 'rails_helper'
 
 describe Form::StatusBatch do
-  let(:form) { Form::StatusBatch.new(action: action, status_ids: status_ids) }
+  let(:account) { Fabricate(:account) }
+  let(:admin) { Fabricate(:user, admin: true, account: account) }
+  let(:form) { Form::StatusBatch.new(action: action, status_ids: status_ids, current_account: account) }
   let(:status) { Fabricate(:status) }
 
   describe 'with nsfw action' do

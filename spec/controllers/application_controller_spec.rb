@@ -169,10 +169,10 @@ describe ApplicationController, type: :controller do
       expect(response).to have_http_status(200)
     end
 
-    it 'redirects to account status page' do
+    it 'returns a 403 when a suspended user attempts to login' do
       sign_in(Fabricate(:user, account: Fabricate(:account, suspended: true)))
       get 'success'
-      expect(response).to redirect_to(edit_user_registration_path)
+      expect(response).to have_http_status(403)
     end
   end
 

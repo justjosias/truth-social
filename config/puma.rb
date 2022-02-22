@@ -20,4 +20,9 @@ on_worker_boot do
   end
 end
 
+after_worker_boot do
+  require 'prometheus_exporter/instrumentation'
+  PrometheusExporter::Instrumentation::Puma.start
+end
+
 plugin :tmp_restart

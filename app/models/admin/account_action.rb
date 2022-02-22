@@ -7,10 +7,15 @@ class Admin::AccountAction
 
   TYPES = %w(
     none
+    ban
     disable
+    remove_avatar
+    remove_header
     sensitive
     silence
+    unsilence
     suspend
+    unsuspend
     verify
   ).freeze
 
@@ -64,16 +69,28 @@ class Admin::AccountAction
 
   def process_action!
     case type
+    when 'enable'
+      handle_enable!
     when 'disable'
       handle_disable!
     when 'sensitive'
       handle_sensitive!
     when 'silence'
       handle_silence!
+    when 'unsilence'
+      handle_unsilence!
     when 'verify'
       handle_verify!
     when 'suspend'
       handle_suspend!
+    when 'unsuspend'
+      handle_unsuspend!
+    when 'ban'
+      handle_ban!
+    when 'remove_avatar'
+      handle_remove_avatar!
+    when 'remove_header'
+      handle_remove_header!
     end
   end
 
@@ -109,10 +126,23 @@ class Admin::AccountAction
     end
   end
 
+  def handle_ban!
+    authorize(target_account.user, :ban?)
+    log_action(:ban, target_account.user)
+    target_account.suspend!
+    Admin::AccountDeletionWorker.perform_async(target_account.id)
+  end
+
   def handle_disable!
     authorize(target_account.user, :disable?)
     log_action(:disable, target_account.user)
     target_account.user&.disable!
+  end
+
+  def handle_enable!
+    authorize(target_account.user, :enable?)
+    log_action(:enable, target_account.user)
+    target_account.user&.enable!
   end
 
   def handle_sensitive!
@@ -127,16 +157,48 @@ class Admin::AccountAction
     target_account.silence!
   end
 
+  def handle_unsilence!
+    authorize(target_account, :unsilence?)
+    log_action(:unsilence, target_account)
+    target_account.unsilence!
+  end
+
   def handle_suspend!
     authorize(target_account, :suspend?)
     log_action(:suspend, target_account)
     target_account.suspend!(origin: :local)
+
+    if account_suspension_policy.strikes_expended?
+      Admin::AccountDeletionWorker.perform_async(target_account.id)
+    else
+      schedule_unsuspension!
+    end
+  end
+
+  def handle_unsuspend!
+    authorize(target_account, :unsuspend?)
+    log_action(:unsuspend, target_account)
+    target_account.unsuspend!
   end
 
   def handle_verify!
     authorize(target_account, :verify?)
     log_action(:verify, target_account)
     target_account.verify!
+  end
+
+  def handle_remove_avatar!
+    authorize(target_account, :remove_avatar?)
+    log_action(:remove_avatar, target_account)
+    target_account.avatar = nil
+    target_account.save!
+  end
+
+  def handle_remove_header!
+    authorize(target_account, :remove_header?)
+    log_action(:remove_header, target_account)
+    target_account.header = nil
+    target_account.save!
   end
 
   def text_for_warning
@@ -173,5 +235,13 @@ class Admin::AccountAction
 
   def warning_preset
     @warning_preset ||= AccountWarningPreset.find(warning_preset_id) if warning_preset_id.present?
+  end
+
+  def schedule_unsuspension!
+    Admin::UnsuspensionWorker.perform_at(account_suspension_policy.next_unsuspension_date, target_account.id)
+  end
+
+  def account_suspension_policy
+    @account_suspension_policy ||= AccountSuspensionPolicy.new(target_account)
   end
 end

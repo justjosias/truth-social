@@ -2,7 +2,7 @@
 
 class Settings::Preferences::OtherController < Settings::PreferencesController
   before_action :set_features, only: :show
-  # TODO: @features
+
   SHOWN_FEATURES = {
     'noindex' => false,
     'hide_network' => false,

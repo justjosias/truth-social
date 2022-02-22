@@ -8,6 +8,7 @@ RSpec.describe Notification, type: :model do
     let(:favourite)    { Fabricate(:favourite, status: status) }
     let(:mention)      { Fabricate(:mention, status: status) }
     let(:invite)       { Fabricate(:invite) }
+    let(:user)         { Fabricate(:user, approved: false) }
 
     context 'activity is reblog' do
       let(:activity) { reblog }
@@ -60,6 +61,11 @@ RSpec.describe Notification, type: :model do
       notification = Notification.new(activity: Invite.new)
       expect(notification.type).to eq :invite
     end
+
+    it 'returns :user_approved for a User' do
+      notification = Notification.new(activity: User.new)
+      expect(notification.type).to eq :user_approved
+    end
   end
 
   describe '.preload_cache_collection_target_statuses' do
@@ -91,6 +97,7 @@ RSpec.describe Notification, type: :model do
       let(:favourite)      { Fabricate(:favourite) }
       let(:poll)           { Fabricate(:poll) }
       let(:invite)         { Fabricate(:invite) }
+      let(:user)           { Fabricate(:user, approved: true) }
 
       let(:notifications) do
         [
@@ -102,6 +109,7 @@ RSpec.describe Notification, type: :model do
           Fabricate(:notification, type: :favourite, activity: favourite),
           Fabricate(:notification, type: :poll, activity: poll),
           Fabricate(:notification, type: :invite, activity: invite),
+          Fabricate(:notification, type: :user_approved, activity: user),
         ]
       end
 
@@ -141,6 +149,10 @@ RSpec.describe Notification, type: :model do
         # invite
         expect(subject[7].type).to eq :invite
         expect(subject[7].invite.association(:users)).to be_loaded
+
+        # user_approved
+        expect(subject[8].type).to eq :user_approved
+        expect(subject[8].association(:user)).to be_loaded
       end
 
       it 'replaces to cached status' do

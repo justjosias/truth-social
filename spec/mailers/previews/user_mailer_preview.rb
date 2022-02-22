@@ -71,11 +71,6 @@ class UserMailerPreview < ActionMailer::Preview
     UserMailer.reset_password_instructions(User.first, 'spec')
   end
 
-  # Preview this email at http://localhost:3000/rails/mailers/user_mailer/welcome
-  def welcome
-    UserMailer.welcome(User.first)
-  end
-
   # Preview this email at http://localhost:3000/rails/mailers/user_mailer/backup_ready
   def backup_ready
     UserMailer.backup_ready(User.first, Backup.first)
@@ -89,5 +84,15 @@ class UserMailerPreview < ActionMailer::Preview
   # Preview this email at http://localhost:3000/rails/mailers/user_mailer/sign_in_token
   def sign_in_token
     UserMailer.sign_in_token(User.first.tap { |user| user.generate_sign_in_token }, '127.0.0.1', 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:75.0) Gecko/20100101 Firefox/75.0', Time.now.utc)
+  end
+
+  # Preview this email at http://localhost:3000/rails/mailers/user_mailer/status_removed
+  def status_removed
+    UserMailer.status_removed(User.first, Status.first)
+  end
+
+  # Preview this email at http://localhost:3000/rails/mailers/user_mailer/waitlisted
+  def waitlisted
+    UserMailer.waitlisted(User.where.not(waitlist_position: [nil, 0]).take)
   end
 end

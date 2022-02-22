@@ -18,7 +18,7 @@ RSpec.describe Api::V1::ConversationsController, type: :controller do
     let(:scopes) { 'read:statuses' }
 
     before do
-      PostStatusService.new.call(other.account, text: 'Hey @alice', visibility: 'direct')
+      PostStatusService.new.call(other.account, text: 'Hey @alice', visibility: 'direct', mentions: ['alice'])
     end
 
     it 'returns http success' do

@@ -28,6 +28,18 @@ RSpec.describe ReportService, type: :service do
     end
   end
 
+  context 'with rules' do
+    let(:account) { Fabricate(:user).account }
+    let(:rule) { Fabricate(:rule, deleted_at: nil, priority: 0 ) }
+    let(:status) { Fabricate(:status ) }
+
+    it 'contains the status id and the rule id' do
+      subject.call(source_account, account, status_ids: [status.id], rule_ids: [rule.id])
+      expect(Report.last.rule_ids[0]).to eq(rule.id)
+      expect(Report.last.status_ids[0]).to eq(status.id)
+    end
+  end
+
   context 'when other reports already exist for the same target' do
     let!(:target_account) { Fabricate(:account) }
     let!(:other_report)   { Fabricate(:report, target_account: target_account) }

@@ -11,6 +11,10 @@
 
     .fields-group
       = f.input :text, wrapper: :with_block_label
+    .fields-group
+      = f.input :subtext, wrapper: :with_block_label
+    .fields_group
+      = f.input :rule_type, collection: Rule.rule_types.keys.to_a
 
     .actions
       = f.button :button, t('admin.rules.add_new'), type: :submit

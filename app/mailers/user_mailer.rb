@@ -137,17 +137,6 @@ class UserMailer < Devise::Mailer
     end
   end
 
-  def welcome(user)
-    @resource = user
-    @instance = Rails.configuration.x.local_domain
-
-    return unless @resource.active_for_authentication?
-
-    I18n.with_locale(@resource.locale || I18n.default_locale) do
-      mail to: @resource.email, subject: I18n.t('user_mailer.welcome.subject')
-    end
-  end
-
   def backup_ready(user, backup)
     @resource = user
     @instance = Rails.configuration.x.local_domain
@@ -166,9 +155,25 @@ class UserMailer < Devise::Mailer
     @instance = Rails.configuration.x.local_domain
     @statuses = Status.where(id: status_ids).includes(:account) if status_ids.is_a?(Array)
 
+    if @warning.action == "suspend"
+      @suspension_policy = AccountSuspensionPolicy.new(user.account)
+    end
+
     I18n.with_locale(@resource.locale || I18n.default_locale) do
       mail to: @resource.email,
            subject: I18n.t("user_mailer.warning.subject.#{@warning.action}", acct: "@#{user.account.local_username_and_domain}"),
+           reply_to: Setting.site_contact_email
+    end
+  end
+
+  def status_removed(user, status_id)
+    @resource = user
+    @instance = Rails.configuration.x.local_domain
+    @statuses = Status.unscoped.where(id: status_id).includes(:account)
+
+    I18n.with_locale(@resource.locale || I18n.default_locale) do
+      mail to: @resource.email,
+           subject: I18n.t("user_mailer.status_removed.subject"),
            reply_to: Setting.site_contact_email
     end
   end
@@ -197,6 +202,16 @@ class UserMailer < Devise::Mailer
 
     I18n.with_locale('en') do
       mail to: @invite.email, subject: I18n.t('admin_mailer.account_invitation.subject', instance: @instance, link: @url)
+    end
+  end
+
+  def waitlisted(user)
+    @user = user
+
+    I18n.with_locale(@user.locale || I18n.default_locale) do
+      mail to: @user.email,
+           subject: t('user_mailer.waitlisted.title'),
+           reply_to: Setting.site_contact_email
     end
   end
 end

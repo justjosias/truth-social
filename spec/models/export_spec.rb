@@ -1,10 +1,18 @@
 require 'rails_helper'
 
 describe Export do
-  let(:account) { Fabricate(:account) }
+  let(:user) { Fabricate(:user) }
+  let(:account) { Fabricate(:account, user: user) }
   let(:target_accounts) do
     [ {}, { username: 'one', domain: 'local.host' } ].map(&method(:Fabricate).curry(2).call(:account))
   end
+  let(:invites) {
+    invites_array = []
+    (0...10).each do |a|
+      invites_array.push(Fabricate(:invite, user: account.user, email: "email-#{a}@mail.com", expires_at: Time.now()+ 10000))
+    end
+    invites_array
+  }
 
   describe 'to_csv' do
     it 'returns a csv of the blocked accounts' do
@@ -37,6 +45,16 @@ describe Export do
       expect(results.size).to eq 3
       expect(results.first).to eq 'Account address,Show boosts'
       expect(results.second).to eq 'one,true'
+    end
+  end
+
+  describe 'user_invites' do
+    before(:each) do
+      @invites = invites
+    end
+
+    it 'returns the total number of user invites' do
+      expect(Export.new(account).total_user_invites).to eq 10
     end
   end
 

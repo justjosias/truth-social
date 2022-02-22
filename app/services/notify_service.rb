@@ -67,6 +67,10 @@ class NotifyService < BaseService
     @notification.type == :invite
   end
 
+  def user_approved?
+    @notification.type == :user_approved
+  end
+
   def direct_message?
     message? && @notification.target_status.direct_visibility?
   end
@@ -99,7 +103,7 @@ class NotifyService < BaseService
   end
 
   def blocked?
-    return false if invite?                                      # Skip if invite notification
+    return false if invite? || user_approved?                    # Skip if invite or user_approved notification
 
     blocked   = @recipient.suspended?                            # Skip if the recipient account is suspended anyway
     blocked ||= from_self? && @notification.type != :poll        # Skip for interactions with self
@@ -143,17 +147,36 @@ class NotifyService < BaseService
   end
 
   def send_push_notifications!
-    subscriptions_ids = ::Web::PushSubscription.where(user_id: @recipient.user.id)
-                                               .select { |subscription| subscription.pushable?(@notification) }
-                                               .map(&:id)
+    subscriptions = ::Web::PushSubscription.where(user_id: @recipient.user.id)
+                                           .select { |subscription| subscription.pushable?(@notification) }
 
-    ::Web::PushNotificationWorker.push_bulk(subscriptions_ids) do |subscription_id|
-      [subscription_id, @notification.id]
+    web_subscription_ids = []
+    mobile_subscription_ids = []
+
+    subscriptions.each do |sub|
+      if [1, 2].include?(sub.platform)
+        mobile_subscription_ids << sub.id
+      else
+        web_subscription_ids << sub.id
+      end
+    end
+
+    if web_subscription_ids.any?
+      ::Web::PushNotificationWorker.push_bulk(web_subscription_ids) do |subscription_id|
+        [subscription_id, @notification.id]
+      end
+    end
+
+    if mobile_subscription_ids.any?
+      ::Mobile::PushNotificationWorker.push_bulk(mobile_subscription_ids) do |subscription_id|
+        [subscription_id, @notification.id]
+      end
     end
   end
 
   def send_email!
     return if @notification.activity.nil?
+
     NotificationMailer.public_send(@notification.type, @recipient, @notification).deliver_later(wait: 2.minutes)
   end
 

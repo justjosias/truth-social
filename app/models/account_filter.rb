@@ -14,6 +14,7 @@ class AccountFilter
     email
     ip
     staff
+    sms
     order
   ).freeze
 
@@ -68,6 +69,8 @@ class AccountFilter
       accounts_with_users.merge(User.matches_email(value))
     when 'ip'
       valid_ip?(value) ? accounts_with_users.merge(User.matches_ip(value)) : Account.none
+    when 'sms'
+      accounts_with_users.merge(User.matches_sms(value))
     when 'staff'
       accounts_with_users.merge(User.staff)
     when 'order'

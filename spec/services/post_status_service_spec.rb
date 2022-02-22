@@ -139,7 +139,7 @@ RSpec.describe PostStatusService, type: :service do
     status = subject.call(account, text: "test status update")
 
     expect(ProcessMentionsService).to have_received(:new)
-    expect(mention_service).to have_received(:call).with(status)
+    expect(mention_service).to have_received(:call).with(status, [])
   end
 
   it 'processes hashtags' do
@@ -163,7 +163,7 @@ RSpec.describe PostStatusService, type: :service do
     status = subject.call(account, text: "test status update")
 
     expect(DistributionWorker).to have_received(:perform_async).with(status.id)
-    expect(ActivityPub::DistributionWorker).to have_received(:perform_async).with(status.id)
+    # expect(ActivityPub::DistributionWorker).to have_received(:perform_async).with(status.id)
   end
 
   it 'crawls links' do
@@ -192,6 +192,21 @@ RSpec.describe PostStatusService, type: :service do
       )
 
       expect(media.reload.status).to eq status
+    end
+    it 'returns medias in the same order as they are defined in media_ids[] whhen creating a status' do
+      account = Fabricate(:account)
+      media1 = Fabricate(:media_attachment, account: account)
+      media2 = Fabricate(:media_attachment, account: account)
+      media3 = Fabricate(:media_attachment, account: account)
+      media4 = Fabricate(:media_attachment, account: account)
+
+      status = subject.call(
+        account,
+        text: "test attachments order",
+        media_ids: [media2.id, media1.id, media4.id, media3.id],
+      )
+
+      expect(status.reload.media_attachments).to eq [media2, media1, media4, media3]
     end
   end
 

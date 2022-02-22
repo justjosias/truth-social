@@ -6,9 +6,9 @@ RSpec.describe ActivityPub::ProcessAccountService, type: :service do
   context 'property values' do
     let(:payload) do
       {
-        id: 'https://foo.test',
+        id: 'https://foo.example.com',
         type: 'Actor',
-        inbox: 'https://foo.test/inbox',
+        inbox: 'https://foo.example.com/inbox',
         attachment: [
           { type: 'PropertyValue', name: 'Pronouns', value: 'They/them' },
           { type: 'PropertyValue', name: 'Occupation', value: 'Unit test' },
@@ -32,9 +32,9 @@ RSpec.describe ActivityPub::ProcessAccountService, type: :service do
   context 'identity proofs' do
     let(:payload) do
       {
-        id: 'https://foo.test',
+        id: 'https://foo.example.com',
         type: 'Actor',
-        inbox: 'https://foo.test/inbox',
+        inbox: 'https://foo.example.com/inbox',
         attachment: [
           { type: 'IdentityProof', name: 'Alice', signatureAlgorithm: 'keybase', signatureValue: 'a' * 66 },
         ],
@@ -79,9 +79,9 @@ RSpec.describe ActivityPub::ProcessAccountService, type: :service do
 
     let(:payload) do
       {
-        id: 'https://foo.test',
+        id: 'https://foo.example.com',
         type: 'Actor',
-        inbox: 'https://foo.test/inbox',
+        inbox: 'https://foo.example.com/inbox',
         suspended: true,
       }.with_indifferent_access
     end
@@ -108,9 +108,9 @@ RSpec.describe ActivityPub::ProcessAccountService, type: :service do
 
     let(:payload) do
       {
-        id: 'https://foo.test',
+        id: 'https://foo.example.com',
         type: 'Actor',
-        inbox: 'https://foo.test/inbox',
+        inbox: 'https://foo.example.com/inbox',
         suspended: false,
         name: 'Hoge',
       }.with_indifferent_access

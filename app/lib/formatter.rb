@@ -30,7 +30,7 @@ class Formatter
       return html.html_safe # rubocop:disable Rails/OutputSafety
     end
 
-    linkable_accounts = status.active_mentions.map(&:account)
+    linkable_accounts = get_linkable_accounts(status)
     linkable_accounts << status.account
 
     html = raw_content
@@ -125,6 +125,18 @@ class Formatter
         link_to_mention(entity, accounts, options)
       end
     end
+  end
+
+  def get_linkable_accounts(status)
+    linkable_usernames = []
+
+    status.text.scan(Account::MENTION_RE).each do |match|
+      username = match[1]
+
+      linkable_usernames << username
+    end
+
+    Account.ci_find_by_usernames(linkable_usernames).to_a
   end
 
   def count_tag_nesting(tag)

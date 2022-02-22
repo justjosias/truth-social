@@ -26,6 +26,7 @@
 #  thumbnail_file_size         :integer
 #  thumbnail_updated_at        :datetime
 #  thumbnail_remote_url        :string
+#  external_video_id           :string
 #
 
 class MediaAttachment < ApplicationRecord
@@ -168,7 +169,7 @@ class MediaAttachment < ApplicationRecord
                     convert_options: GLOBAL_CONVERT_OPTIONS
 
   before_file_post_process :set_type_and_extension
-  before_file_post_process :check_video_dimensions
+  before_file_post_process :do_not_process_video_files
 
   validates_attachment_content_type :file, content_type: IMAGE_MIME_TYPES + VIDEO_MIME_TYPES + AUDIO_MIME_TYPES
   validates_attachment_size :file, less_than: IMAGE_LIMIT, unless: :larger_media_format?
@@ -197,7 +198,7 @@ class MediaAttachment < ApplicationRecord
   scope :remote,     -> { where.not(remote_url: '') }
   scope :cached,     -> { remote.where.not(file_file_name: nil) }
 
-  default_scope { order(id: :asc) }
+  default_scope { order(updated_at: :asc) }
 
   def local?
     remote_url.blank?
@@ -331,6 +332,12 @@ class MediaAttachment < ApplicationRecord
     self.processing = delay_processing? ? :queued : :complete
   end
 
+  def do_not_process_video_files
+    return false if video?
+
+    check_video_dimensions
+  end
+
   def check_video_dimensions
     return unless (video? || gifv?) && file.queued_for_write[:original].present?
 
@@ -394,7 +401,12 @@ class MediaAttachment < ApplicationRecord
   end
 
   def enqueue_processing
-    PostProcessMediaWorker.perform_async(id) if delay_processing?
+    if video?
+      self.processing = :complete
+      self.save
+    else
+      PostProcessMediaWorker.perform_async(id) if delay_processing?
+    end
   end
 
   def reset_parent_cache

@@ -19,6 +19,7 @@ class FavouriteService < BaseService
 
     create_notification(favourite)
     bump_potential_friendship(account, status)
+    export_prometheus_metric
 
     favourite
   end
@@ -43,5 +44,9 @@ class FavouriteService < BaseService
 
   def build_json(favourite)
     Oj.dump(serialize_payload(favourite, ActivityPub::LikeSerializer))
+  end
+
+  def export_prometheus_metric
+    Prometheus::ApplicationExporter::increment(:favourites)
   end
 end
