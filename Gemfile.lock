@@ -247,7 +247,7 @@ GEM
       ruby-progressbar (~> 1.4)
     globalid (0.4.2)
       activesupport (>= 4.2.0)
-    google-protobuf (3.19.3)
+    google-protobuf (3.19.4)
     hamlit (2.13.0)
       temple (>= 0.8.2)
       thor
