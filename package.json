@@ -172,7 +172,7 @@
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.13.0",
-    "@testing-library/react": "^11.2.7",
+    "@testing-library/react": "^12.1.4",
     "babel-eslint": "^10.1.0",
     "babel-jest": "^27.0.2",
     "eslint": "^7.28.0",
