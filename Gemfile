@@ -136,7 +136,7 @@ group :development do
   gem 'better_errors', '~> 2.9'
   gem 'binding_of_caller', '~> 1.0'
   gem 'bullet', '~> 6.1'
-  gem 'letter_opener', '~> 1.7'
+  gem 'letter_opener', '~> 1.8'
   gem 'letter_opener_web', '~> 1.4'
   gem 'memory_profiler'
   gem 'rubocop', '~> 1.16', require: false
