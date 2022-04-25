@@ -247,7 +247,7 @@ GEM
       ruby-progressbar (~> 1.4)
     globalid (0.4.2)
       activesupport (>= 4.2.0)
-    google-protobuf (3.19.3)
+    google-protobuf (3.20.1)
     hamlit (2.13.0)
       temple (>= 0.8.2)
       thor
@@ -718,7 +718,7 @@ DEPENDENCIES
   fog-core (<= 2.1.0)
   fog-openstack (~> 0.3)
   fuubar (~> 2.5)
-  google-protobuf (~> 3.19)
+  google-protobuf (~> 3.20)
   hamlit-rails (~> 0.2)
   hiredis (~> 0.6)
   htmlentities (~> 4.3)
