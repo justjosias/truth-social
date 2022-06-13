@@ -167,7 +167,7 @@
     "webpack-bundle-analyzer": "^4.4.2",
     "webpack-cli": "^3.3.12",
     "webpack-merge": "^5.7.3",
-    "wicg-inert": "^3.1.1",
+    "wicg-inert": "^3.1.2",
     "ws": "^7.4.6"
   },
   "devDependencies": {
