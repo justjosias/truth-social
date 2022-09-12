@@ -4,7 +4,7 @@ source 'https://rubygems.org'
 ruby '>= 2.5.0', '< 3.1.0'
 
 gem 'pkg-config', '~> 1.4'
-gem 'openssl', '~> 2.2.0'
+gem 'openssl', '~> 2.2.2'
 
 gem 'puma', '~> 5.4'
 gem 'rails', '~> 6.1.3'
