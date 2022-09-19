@@ -163,4 +163,4 @@ gem 'xorcist', '~> 1.1'
 
 gem 'resolv', '~> 0.1.0'
 
-gem 'newrelic_rpm', '~> 7.2'
+gem 'newrelic_rpm', '~> 8.10'
