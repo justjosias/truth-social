@@ -1180,10 +1180,12 @@
   resolved "https://registry.yarnpkg.com/@gamestdio/websocket/-/websocket-0.3.2.tgz#321ba0976ee30fd14e51dbf8faa85ce7b325f76a"
   integrity sha512-J3n5SKim+ZoLbe44hRGI/VYAwSMCeIJuBy+FfP6EZaujEpNchPRFcIsVQLWAwpU1bP2Ji63rC+rEUOd1vjUB6Q==
 
-"@github/webauthn-json@^0.5.7":
-  version "0.5.7"
-  resolved "https://registry.yarnpkg.com/@github/webauthn-json/-/webauthn-json-0.5.7.tgz#143bc67f6e0f75f8d188e565741507bb08c31214"
-  integrity sha512-SUYsttDxFSvWvvJssJpwzjmRCqYfdfqC9VCmAHQYfdKCVelyJteCHo9/lK1CB72mx/jrl6cFNY08aua4J2jIyg==
+"@github/webauthn-json@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@github/webauthn-json/-/webauthn-json-2.0.1.tgz#c94b6aea1b6ae00d7451275f2222f439446bb0e9"
+  integrity sha512-9vjpjK3Qfd5FgvdueWYOGnR3TadG1dLQ2vHoL+un5JutH1fqR4LZaOWqHWGLmZz7NZodGle53GdXF9yhq4JWgA==
+  dependencies:
+    rome "^0.9.2-next"
 
 "@istanbuljs/load-nyc-config@^1.0.0":
   version "1.1.0"
@@ -1430,6 +1432,51 @@
   version "6.1.3"
   resolved "https://registry.yarnpkg.com/@rails/ujs/-/ujs-6.1.3.tgz#90ef26caa0925492b1a3b1495db09cfbe49e745e"
   integrity sha512-9mip5o+LVouWAqLMNJWhxda+D5uP+4RziNECgOGJlL6k3rc5SC/ljCHpV9Cym4i3oeGZkpZJ2tu4frCwt84kzQ==
+
+"@rometools/cli-darwin-arm64@0.9.2-next":
+  version "0.9.2-next"
+  resolved "https://registry.yarnpkg.com/@rometools/cli-darwin-arm64/-/cli-darwin-arm64-0.9.2-next.tgz#87c7903fa34aca2511b1bf091646b9008e51a9d7"
+  integrity sha512-7i/3sRwCsz5QzGarYpiggInciSO99mH2Qx3LZ8Mf+ia1jPWBaVtGiN+GimFZEcFnYhJ6EXMNYlAuX1nJyaRSVQ==
+
+"@rometools/cli-darwin-x64@0.9.2-next":
+  version "0.9.2-next"
+  resolved "https://registry.yarnpkg.com/@rometools/cli-darwin-x64/-/cli-darwin-x64-0.9.2-next.tgz#70d223b7553c5ee4340e3a88c55fc0152046f897"
+  integrity sha512-Sy0cgqW86PT0TuyAgNHpalRXrKM5WZPnDtHKVS2QXA5Ad01dhQxPHl5SiF12ussJztHWjWDmMKAso/Uopz8ENw==
+
+"@rometools/cli-linux-arm64@0.9.2-next":
+  version "0.9.2-next"
+  resolved "https://registry.yarnpkg.com/@rometools/cli-linux-arm64/-/cli-linux-arm64-0.9.2-next.tgz#190a41b992d1ab3be8a655c20f5fc5c260d5d7dc"
+  integrity sha512-WdhmT4sx1iGbjME8krEsYLmkgzJlNwv9yEjwIyhpAe87QngYF4w7KwdZeCAp28jkI8cp5vGYjTAHtbARRMUAcQ==
+
+"@rometools/cli-linux-x64@0.9.2-next":
+  version "0.9.2-next"
+  resolved "https://registry.yarnpkg.com/@rometools/cli-linux-x64/-/cli-linux-x64-0.9.2-next.tgz#b3b996e0953e11d4972b00589dcb36c5ad1943db"
+  integrity sha512-Pgq0srYfXqgZ/Zlv2a3BzHhh+dewddWRrSWqqhjxcLLEm5IPVqfVmq0fUbNMZYm9M7DOJbUmcMdU6lPFdV044w==
+
+"@rometools/cli-win32-arm64@0.9.2-next":
+  version "0.9.2-next"
+  resolved "https://registry.yarnpkg.com/@rometools/cli-win32-arm64/-/cli-win32-arm64-0.9.2-next.tgz#6df4d404cefc0e31c4c1969773e880e70b186581"
+  integrity sha512-6+5R/IzJKxIXMefjQ03/5D+fKBSsynV9LvF3Ovtr0vsSfA3SdjRfsOlkH/bPOrWcLT96Fkdq8ATWd5Ah2NBQ6A==
+
+"@rometools/cli-win32-x64@0.9.2-next":
+  version "0.9.2-next"
+  resolved "https://registry.yarnpkg.com/@rometools/cli-win32-x64/-/cli-win32-x64-0.9.2-next.tgz#997dcf34ef1a709aea2d61fd898e87722222b675"
+  integrity sha512-cFg4mGdkWcVajk+mKWjt5g/RBaxvCrJ8qBseLSIWEh8jHfpSTbOFc5Z/Mkv7QY1WWOEUBr0bX71iqZqfh3jfOA==
+
+"@rometools/wasm-bundler@0.9.2-next":
+  version "0.9.2-next"
+  resolved "https://registry.yarnpkg.com/@rometools/wasm-bundler/-/wasm-bundler-0.9.2-next.tgz#25006e3fdd19c5ce4a0896d3012ecbad69f91f7f"
+  integrity sha512-sa2rpam4spyijJMGfqrxttN8QX67OyZjAb+JyFB5FGfNvd075nFdTBSuM177tgbbSwmt3n2MY23EV1aCLiGTmg==
+
+"@rometools/wasm-nodejs@0.9.2-next":
+  version "0.9.2-next"
+  resolved "https://registry.yarnpkg.com/@rometools/wasm-nodejs/-/wasm-nodejs-0.9.2-next.tgz#47130ccdacdf961f6f16101d8d1424ec62de416c"
+  integrity sha512-yUTxjYZfrqXQrszRUVK/lUfRJOD5g9wfZXeRBJ4FJllGCy1CvwwR9bS09oSLIZd8zMCC02XMBBW+OZJ1b6rZrA==
+
+"@rometools/wasm-web@0.9.2-next":
+  version "0.9.2-next"
+  resolved "https://registry.yarnpkg.com/@rometools/wasm-web/-/wasm-web-0.9.2-next.tgz#da82f28706161850a9eed297494bc5d30550d6e0"
+  integrity sha512-iZpgD4n5f2tMeSwlF50k/d8RGBkdoi7wX9YtYTXFks7mN3Z5OU7IHC1LvY28yAv0EELwMFYaaZIvhIs0jozzKw==
 
 "@sinonjs/commons@^1.7.0":
   version "1.8.1"
@@ -9758,6 +9805,21 @@ ripemd160@^2.0.0, ripemd160@^2.0.1:
   dependencies:
     hash-base "^3.0.0"
     inherits "^2.0.1"
+
+rome@^0.9.2-next:
+  version "0.9.2-next"
+  resolved "https://registry.yarnpkg.com/rome/-/rome-0.9.2-next.tgz#b84587cb54ad3d1552edf07c9927d48f8e72d723"
+  integrity sha512-ppc7Jg3oZfmVXvs28OynJBWa26dy8201QNH3vY8RlfdzxblLOb9+ovPgcmwceSURZMNz/HS+aTpuHW8T06ciHA==
+  optionalDependencies:
+    "@rometools/cli-darwin-arm64" "0.9.2-next"
+    "@rometools/cli-darwin-x64" "0.9.2-next"
+    "@rometools/cli-linux-arm64" "0.9.2-next"
+    "@rometools/cli-linux-x64" "0.9.2-next"
+    "@rometools/cli-win32-arm64" "0.9.2-next"
+    "@rometools/cli-win32-x64" "0.9.2-next"
+    "@rometools/wasm-bundler" "0.9.2-next"
+    "@rometools/wasm-nodejs" "0.9.2-next"
+    "@rometools/wasm-web" "0.9.2-next"
 
 rsvp@^4.8.4:
   version "4.8.5"
