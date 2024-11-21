@@ -80,7 +80,7 @@ gem 'prometheus_exporter', '~> 1.0'
 gem 'ruby_proto_schemas', git: "https://gitlab.com/tmediatech/ruby-proto-schemas.git", tag: "v4"
 gem 'premailer-rails'
 gem 'pundit', '~> 2.1'
-gem 'rack-attack', '~> 6.5'
+gem 'rack-attack', '~> 6.6'
 gem 'rack-cors', '~> 1.1', require: 'rack/cors'
 gem 'rails-i18n', '~> 6.0'
 gem 'rails-settings-cached', '~> 0.6'
