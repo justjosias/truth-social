@@ -242,7 +242,7 @@ GEM
     faraday-rack (1.0.0)
     faraday-retry (1.0.3)
     fast_blank (1.0.0)
-    fastimage (2.2.4)
+    fastimage (2.2.6)
     ffi (1.15.5)
     ffi-compiler (1.0.1)
       ffi (>= 1.0.0)
